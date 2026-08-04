@@ -1,13 +1,13 @@
 {
-  "name": "Dossier — Culture Générale & Sport",
-  "short_name": "Dossier CG",
-  "description": "Tableau de bord quotidien : suivi de culture générale et routine sportive.",
+  "name": "Mon Dashboard — Sport, Culture & Lecture",
+  "short_name": "Mon Dashboard",
+  "description": "Tableau de bord quotidien : sport, culture générale, lecture et habitudes.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#12161a",
-  "theme_color": "#12161a",
+  "background_color": "#14161c",
+  "theme_color": "#14161c",
   "lang": "fr",
   "icons": [
     {

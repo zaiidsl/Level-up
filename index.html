@@ -3,66 +3,157 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Dossier — Culture Générale & Sport</title>
+<title>Mon Dashboard</title>
 
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#12161a">
-<meta name="description" content="Tableau de bord quotidien : suivi de culture générale et routine sportive.">
+<meta name="theme-color" content="#14161c">
+<meta name="description" content="Tableau de bord quotidien : sport, culture générale, lecture et habitudes.">
 
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Dossier CG">
+<meta name="apple-mobile-web-app-title" content="Mon Dashboard">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="dossier">
+<div class="app">
 
-  <header class="masthead">
-    <button class="theme-toggle" id="themeToggle">Mode clair</button>
-    <p class="ref">RÉF. CG-2026 · SUIVI QUOTIDIEN</p>
-    <h1>Dossier de Culture Générale &amp; Sport</h1>
-    <p class="subtitle">Économie · Géopolitique · Militaire · Tech · Routine physique</p>
-  </header>
-
-  <section class="today">
-    <div class="today-top">
-      <span class="today-day" id="todayDay"></span>
-      <span class="today-date" id="todayDate"></span>
-    </div>
-
-    <div class="group">
-      <p class="group-label">Culture générale</p>
-      <div class="today-list" id="cultureList"></div>
-    </div>
-
-    <div class="group">
-      <p class="group-label">Sport — routine du jour</p>
-      <div class="routine-picker">
-        <label for="routineSelect">Aujourd'hui je fais :</label>
-        <select id="routineSelect">
-          <option value="repos">Repos</option>
-          <option value="push">Push</option>
-          <option value="pull">Pull</option>
-          <option value="legs">Legs</option>
-          <option value="kettlebell">Kettlebell circuit</option>
-          <option value="mobility_only">Mobilité seule</option>
-        </select>
+  <aside class="sidebar">
+    <div class="brand">Z</div>
+    <ul class="nav" id="nav">
+      <li><button data-page="today" class="active"><span class="icon">🏠</span><span>Mon Dashboard</span></button></li>
+      <li><button data-page="today"><span class="icon">☀️</span><span>Aujourd'hui</span></button></li>
+      <li class="nav-gap"></li>
+      <li><button data-page="sport"><span class="icon">🏋️</span><span>Sport</span></button></li>
+      <li><button data-page="culture"><span class="icon">🌍</span><span>Culture</span></button></li>
+      <li><button data-page="lecture"><span class="icon">📖</span><span>Lecture</span></button></li>
+      <li><button data-page="habitudes"><span class="icon">🎯</span><span>Habitudes</span></button></li>
+      <li><button data-page="stats"><span class="icon">📊</span><span>Statistiques</span></button></li>
+      <li><button data-page="notes"><span class="icon">📝</span><span>Notes</span></button></li>
+    </ul>
+    <div class="sidebar-footer">
+      <p class="quote">« On devient ce que l'on répète chaque jour. »<span>— Aristote</span></p>
+      <div class="sidebar-actions">
+        <button id="themeToggle" title="Changer de thème">🌙</button>
       </div>
-      <div class="today-list" id="sportList"></div>
     </div>
+  </aside>
 
-    <p class="today-status" id="todayStatus"></p>
-    <div class="reset-row"><button class="reset-btn" id="resetBtn">Réinitialiser aujourd'hui</button></div>
-  </section>
+  <main class="content">
 
-  <section class="ref-section" id="rosterSection">
-    <button class="ref-toggle" aria-expanded="false">Vue d'ensemble — planning culture générale <span class="chevron">›</span></button>
-    <div class="ref-body">
+    <!-- ================= TODAY ================= -->
+    <section class="page active" data-page="today">
+      <div class="topbar">
+        <div class="greeting">
+          <h1 id="greeting">Bonjour 👋</h1>
+          <p id="todayDate"></p>
+        </div>
+        <div class="progress-card">
+          <div class="label"><span>Progression du jour</span><span class="pct" id="progressPct">0%</span></div>
+          <div class="bar"><div class="bar-fill" id="progressBar" style="width:0%"></div></div>
+          <div class="sub" id="progressSub">0 / 0 tâches complétées</div>
+        </div>
+      </div>
+
+      <div class="stat-pills" style="margin-bottom:16px;">
+        <div class="pill"><span class="emoji">🔥</span><div><div class="n" id="pillSport">0</div><div class="l">Sport jours</div></div></div>
+        <div class="pill"><span class="emoji">🧠</span><div><div class="n" id="pillCulture">0</div><div class="l">Culture jours</div></div></div>
+        <div class="pill"><span class="emoji">📖</span><div><div class="n" id="pillLecture">0</div><div class="l">Lecture jours</div></div></div>
+      </div>
+
+      <div class="grid3">
+        <div class="card" id="sportCard">
+          <div class="card-head"><span class="emoji">🏋️</span><h3>SPORT</h3></div>
+          <div class="card-sub"><span class="caption">Routine du jour</span><select id="routineSelect"></select></div>
+          <div class="checklist" id="sportChecklist"></div>
+          <div class="card-progress"><span id="sportProgTxt">0/0</span><div class="bar"><div class="bar-fill" id="sportProgBar" style="width:0%"></div></div></div>
+          <button class="card-btn" data-goto="sport">Voir le détail de la séance ›</button>
+        </div>
+
+        <div class="card" id="cultureCard">
+          <div class="card-head"><span class="emoji">🧠</span><h3>CULTURE</h3></div>
+          <div class="card-sub"><span class="caption">Sujet du jour</span><select id="topicSelect"></select></div>
+          <div class="checklist" id="cultureChecklist"></div>
+          <div class="card-progress"><span id="cultureProgTxt">0/0</span><div class="bar"><div class="bar-fill" id="cultureProgBar" style="width:0%"></div></div></div>
+          <button class="card-btn" data-goto="culture">Voir mes notes ›</button>
+        </div>
+
+        <div class="card" id="lectureCard">
+          <div class="card-head"><span class="emoji">📖</span><h3>LECTURE</h3></div>
+          <div class="card-sub"><span class="caption">Livre actuel</span><select id="bookSelect"></select></div>
+          <div class="checklist" id="lectureChecklist"></div>
+          <div class="card-progress"><span id="lectureProgTxt">0/0 pages</span><div class="bar"><div class="bar-fill" id="lectureProgBar" style="width:0%"></div></div></div>
+          <button class="card-btn" data-goto="lecture">Voir ma bibliothèque ›</button>
+        </div>
+      </div>
+
+      <div class="grid4">
+        <div class="card" id="commCard">
+          <div class="card-head"><span class="emoji">💬</span><h3>COMMUNICATION</h3></div>
+          <p class="card-sub" style="display:block;"><span class="caption">Objectif du jour</span></p>
+          <div class="objective-box" id="commTip"></div>
+          <label class="check-item" id="commCheck" style="margin-top:auto;">
+            <input type="checkbox" id="commCheckbox">
+            <span class="txt"><span class="t">Objectif posé aujourd'hui</span><span class="s" id="commTime"></span></span>
+          </label>
+        </div>
+
+        <div class="card" id="habitCard">
+          <div class="card-head"><span class="emoji">📅</span><h3>HABITUDES</h3></div>
+          <div id="habitList" style="margin-top:8px;"></div>
+          <button class="card-btn" data-goto="habitudes">Voir toutes les habitudes ›</button>
+        </div>
+
+        <div class="card" id="calCard">
+          <div class="card-head"><span class="emoji">🗓️</span><h3>CALENDRIER</h3></div>
+          <div class="cal-head">
+            <button id="calPrev">‹</button>
+            <span class="cal-title" id="calTitle"></span>
+            <button id="calNext">›</button>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+
+        <div class="card" id="statsCard">
+          <div class="card-head"><span class="emoji">📊</span><h3>STATISTIQUES</h3></div>
+          <p class="card-sub"><span class="caption">Cette semaine</span></p>
+          <div id="statsMini"></div>
+          <button class="card-btn" data-goto="stats">Voir toutes les stats ›</button>
+        </div>
+      </div>
+
+      <div class="bottom-row">
+        <div class="quick-add">
+          <h3>Ajout rapide</h3>
+          <div class="quick-add-btns">
+            <button id="qaTask">+ Tâche libre</button>
+            <button data-goto="sport">🏋️ Séance sport</button>
+            <button id="qaNote">📝 Note</button>
+            <button data-goto="lecture">📖 Lecture</button>
+            <button data-goto="habitudes">🎯 Habitude</button>
+          </div>
+        </div>
+        <div class="weekly-goal" id="weeklyGoalBtn">
+          <span class="emoji">🎯</span>
+          <div><div class="wg-label">Objectif de la semaine</div><div class="wg-text" id="weeklyGoalText"></div></div>
+          <span class="chev">›</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SPORT ================= -->
+    <section class="page" data-page="sport">
+      <div class="page-title"><h2>🏋️ Sport — toutes les routines</h2></div>
+      <div id="sportPageBody"></div>
+    </section>
+
+    <!-- ================= CULTURE ================= -->
+    <section class="page" data-page="culture">
+      <div class="page-title"><h2>🌍 Culture générale</h2></div>
       <table class="roster-table">
         <thead><tr><th>Jour</th><th>Créneau</th><th>Pilier</th><th>Format</th></tr></thead>
         <tbody>
@@ -75,17 +166,35 @@
           <tr><td>Dimanche</td><td>Soir, 30–45 min</td><td>Tous piliers</td><td>Lecture livre en cours + bilan semaine</td></tr>
         </tbody>
       </table>
-    </div>
-  </section>
-
-  <section class="ref-section" id="pillarsSection">
-    <button class="ref-toggle" aria-expanded="false">Ressources par pilier <span class="chevron">›</span></button>
-    <div class="ref-body">
       <div id="pillars"></div>
-    </div>
-  </section>
+    </section>
 
-  <footer>DOSSIER PERSONNEL — USAGE STRICTEMENT INDIVIDUEL</footer>
+    <!-- ================= LECTURE ================= -->
+    <section class="page" data-page="lecture">
+      <div class="page-title"><h2>📖 Ma bibliothèque</h2><button class="add-btn" id="addBookBtn">+ Ajouter un livre</button></div>
+      <div id="booksList"></div>
+    </section>
+
+    <!-- ================= HABITUDES ================= -->
+    <section class="page" data-page="habitudes">
+      <div class="page-title"><h2>🎯 Habitudes — 7 derniers jours</h2></div>
+      <div id="habitsPageBody"></div>
+    </section>
+
+    <!-- ================= STATS ================= -->
+    <section class="page" data-page="stats">
+      <div class="page-title"><h2>📊 Statistiques</h2></div>
+      <div id="statsPageBody"></div>
+    </section>
+
+    <!-- ================= NOTES ================= -->
+    <section class="page" data-page="notes">
+      <div class="page-title"><h2>📝 Notes</h2><button class="add-btn" id="addNoteBtn">+ Nouvelle note</button></div>
+      <div class="notes-list" id="notesList"></div>
+    </section>
+
+    <footer>DOSSIER PERSONNEL — USAGE STRICTEMENT INDIVIDUEL</footer>
+  </main>
 </div>
 
 <script src="app.js"></script>
