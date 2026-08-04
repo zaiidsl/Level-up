@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Dossier — Culture Générale & Sport</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#12161a">
+<meta name="description" content="Tableau de bord quotidien : suivi de culture générale et routine sportive.">
+
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dossier CG">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="dossier">
+
+  <header class="masthead">
+    <button class="theme-toggle" id="themeToggle">Mode clair</button>
+    <p class="ref">RÉF. CG-2026 · SUIVI QUOTIDIEN</p>
+    <h1>Dossier de Culture Générale &amp; Sport</h1>
+    <p class="subtitle">Économie · Géopolitique · Militaire · Tech · Routine physique</p>
+  </header>
+
+  <section class="today">
+    <div class="today-top">
+      <span class="today-day" id="todayDay"></span>
+      <span class="today-date" id="todayDate"></span>
+    </div>
+
+    <div class="group">
+      <p class="group-label">Culture générale</p>
+      <div class="today-list" id="cultureList"></div>
+    </div>
+
+    <div class="group">
+      <p class="group-label">Sport — routine du jour</p>
+      <div class="routine-picker">
+        <label for="routineSelect">Aujourd'hui je fais :</label>
+        <select id="routineSelect">
+          <option value="repos">Repos</option>
+          <option value="push">Push</option>
+          <option value="pull">Pull</option>
+          <option value="legs">Legs</option>
+          <option value="kettlebell">Kettlebell circuit</option>
+          <option value="mobility_only">Mobilité seule</option>
+        </select>
+      </div>
+      <div class="today-list" id="sportList"></div>
+    </div>
+
+    <p class="today-status" id="todayStatus"></p>
+    <div class="reset-row"><button class="reset-btn" id="resetBtn">Réinitialiser aujourd'hui</button></div>
+  </section>
+
+  <section class="ref-section" id="rosterSection">
+    <button class="ref-toggle" aria-expanded="false">Vue d'ensemble — planning culture générale <span class="chevron">›</span></button>
+    <div class="ref-body">
+      <table class="roster-table">
+        <thead><tr><th>Jour</th><th>Créneau</th><th>Pilier</th><th>Format</th></tr></thead>
+        <tbody>
+          <tr><td>Lundi</td><td>Matin, 15–20 min</td><td>Économie</td><td>Lecture de fond</td></tr>
+          <tr><td>Mardi</td><td>Trajets, 20–30 min</td><td>Géopolitique</td><td>Podcast</td></tr>
+          <tr><td>Mercredi</td><td>Matin, 15–20 min</td><td>Économie</td><td>Lecture de fond</td></tr>
+          <tr><td>Jeudi</td><td>Trajets, 20–30 min</td><td>Géopolitique</td><td>Podcast</td></tr>
+          <tr><td>Vendredi</td><td>Matin, 15–20 min</td><td>Militaire / Stratégie</td><td>Lecture de fond</td></tr>
+          <tr><td>Samedi</td><td>Libre, 20–30 min</td><td>Tech</td><td>Podcast / veille</td></tr>
+          <tr><td>Dimanche</td><td>Soir, 30–45 min</td><td>Tous piliers</td><td>Lecture livre en cours + bilan semaine</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="ref-section" id="pillarsSection">
+    <button class="ref-toggle" aria-expanded="false">Ressources par pilier <span class="chevron">›</span></button>
+    <div class="ref-body">
+      <div id="pillars"></div>
+    </div>
+  </section>
+
+  <footer>DOSSIER PERSONNEL — USAGE STRICTEMENT INDIVIDUEL</footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
