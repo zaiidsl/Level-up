@@ -7,54 +7,8 @@ const THEME_KEY = "zdash:theme";
 
 /* ---------------- Static content ---------------- */
 
-const SPORT_ROUTINES = {
-  push: { label:"Push", exercises:[
-    {id:"warmup", label:"Échauffement", meta:"10 min"},
-    {id:"bench", label:"Développé couché", meta:"4 × 8"},
-    {id:"incline", label:"Développé incliné", meta:"3 × 10"},
-    {id:"shoulder", label:"Shoulder Press", meta:"3 × 10"},
-    {id:"lateral", label:"Élévations latérales", meta:"3 × 15"},
-    {id:"dips", label:"Dips", meta:"3 × max"},
-    {id:"core", label:"Gainage", meta:"3 × 45 sec"},
-  ]},
-  pull: { label:"Pull", exercises:[
-    {id:"warmup", label:"Échauffement", meta:"10 min"},
-    {id:"pullups", label:"Tractions", meta:"4 × 6"},
-    {id:"row", label:"Rowing barre", meta:"4 × 8"},
-    {id:"latpull", label:"Tirage vertical", meta:"3 × 10"},
-    {id:"curl", label:"Curl biceps", meta:"3 × 12"},
-    {id:"facepull", label:"Face pull", meta:"3 × 15"},
-    {id:"core", label:"Gainage", meta:"3 × 45 sec"},
-  ]},
-  legs: { label:"Legs", exercises:[
-    {id:"warmup", label:"Échauffement", meta:"10 min"},
-    {id:"squat", label:"Squat", meta:"4 × 8"},
-    {id:"legpress", label:"Presse à cuisses", meta:"3 × 10"},
-    {id:"lunges", label:"Fentes", meta:"3 × 12"},
-    {id:"legcurl", label:"Leg curl", meta:"3 × 12"},
-    {id:"calves", label:"Mollets", meta:"4 × 15"},
-    {id:"core", label:"Gainage", meta:"3 × 45 sec"},
-  ]},
-  kettlebell: { label:"Kettlebell circuit", exercises:[
-    {id:"warmup", label:"Échauffement", meta:"5 min"},
-    {id:"swings", label:"Swings", meta:"5 × 15"},
-    {id:"goblet", label:"Goblet squat", meta:"4 × 12"},
-    {id:"cleanpress", label:"Clean & press", meta:"4 × 8"},
-    {id:"row", label:"Rowing kettlebell", meta:"3 × 10"},
-    {id:"tgu", label:"Turkish get-up", meta:"3 × 3"},
-    {id:"core", label:"Gainage", meta:"3 × 45 sec"},
-  ]},
-  mobility_only: { label:"Mobilité seule", exercises:[
-    {id:"morning", label:"Routine mobilité matinale", meta:"15 min"},
-    {id:"hips", label:"Étirements hanches", meta:"5 min"},
-    {id:"shoulders", label:"Étirements épaules", meta:"5 min"},
-    {id:"breathing", label:"Respiration / relâchement", meta:"5 min"},
-  ]},
-  repos: { label:"Repos", exercises:[
-    {id:"morning", label:"Routine mobilité matinale", meta:"15 min"},
-    {id:"breathing", label:"Respiration / relâchement", meta:"5 min"},
-  ]},
-};
+const GYM_TYPES = { push:"Push", pull:"Pull", legs:"Legs", kettlebell:"Kettlebell circuit" };
+const GYM_BY_WEEKDAY = {1:"push", 2:"pull", 3:"legs", 4:"kettlebell", 5:"push", 6:"legs", 0:"pull"};
 
 const CULTURE_TOPICS = {
   economie: { label:"Économie", rank:"01", day:"Lun · Mer",
@@ -105,7 +59,6 @@ const CULTURE_TOPICS = {
 };
 
 const TOPIC_BY_WEEKDAY = {1:"economie", 2:"geopolitique", 3:"economie", 4:"geopolitique", 5:"militaire", 6:"tech", 0:"geopolitique"};
-const ROUTINE_BY_WEEKDAY = {1:"push", 2:"pull", 3:"legs", 4:"kettlebell", 5:"push", 6:"mobility_only", 0:"repos"};
 
 const LECTURE_TASKS = [
   {id:"lire", label:"Lire 15-20 min", meta:"15 min"},
@@ -148,8 +101,11 @@ function saveHistory(h){
 function emptyDay(){
   const d = new Date();
   return {
-    sportRoutine: ROUTINE_BY_WEEKDAY[d.getDay()],
-    sportDone:{},
+    sport:{
+      cardioType:"marche", cardioDistance:0, cardioDuration:0, cardioDone:false,
+      mobilityDone:false,
+      gymType: GYM_BY_WEEKDAY[d.getDay()], gymDone:false,
+    },
     cultureTopic: TOPIC_BY_WEEKDAY[d.getDay()],
     cultureDone:{},
     lecturePages:0,
@@ -183,6 +139,7 @@ let config = loadConfig();
 const KEY = todayKey();
 if(!history[KEY]) history[KEY] = emptyDay();
 let today = history[KEY];
+if(!today.sport) today.sport = emptyDay().sport;
 
 function persist(){
   history[KEY] = today;
@@ -232,7 +189,7 @@ function checkItem(task, done, onToggle){
 
 function dayHasCategory(rec, cat){
   if(!rec) return false;
-  if(cat === "sport") return Object.values(rec.sportDone||{}).some(Boolean);
+  if(cat === "sport") return !!(rec.sport && (rec.sport.cardioDone || rec.sport.mobilityDone || rec.sport.gymDone));
   if(cat === "culture") return Object.values(rec.cultureDone||{}).some(Boolean);
   if(cat === "lecture") return Object.values(rec.lectureDone||{}).some(Boolean) || (rec.lecturePages||0) > 0;
   return false;
@@ -265,22 +222,85 @@ function populateSelect(sel, options, value){
   sel.value = value;
 }
 
-function renderSportCard(){
-  const sel = document.getElementById("routineSelect");
-  populateSelect(sel, Object.keys(SPORT_ROUTINES).map(id => ({id, label:SPORT_ROUTINES[id].label})), today.sportRoutine);
-  sel.onchange = () => { today.sportRoutine = sel.value; persist(); renderSportCard(); renderProgress(); };
+function renderSportInto(container){
+  container.innerHTML = "";
+  const s = today.sport;
 
-  const routine = SPORT_ROUTINES[today.sportRoutine];
-  const list = document.getElementById("sportChecklist");
-  list.innerHTML = "";
-  routine.exercises.forEach(ex => {
-    list.appendChild(checkItem(ex, !!today.sportDone[ex.id], (checked) => {
-      today.sportDone[ex.id] = checked; persist(); renderSportCard(); renderProgress(); renderPills();
-    }));
+  const cardioWrap = document.createElement("div");
+  cardioWrap.className = "sport-item" + (s.cardioDone ? " done" : "");
+  const cardioLabel = document.createElement("label");
+  cardioLabel.className = "check-item" + (s.cardioDone ? " done" : "");
+  cardioLabel.innerHTML = `<input type="checkbox" ${s.cardioDone?"checked":""}><span class="txt"><span class="t">Marche / Footing matinal</span></span>`;
+  cardioLabel.querySelector("input").addEventListener("change", (e) => {
+    s.cardioDone = e.target.checked; persist(); renderSportEverywhere();
   });
-  const done = routine.exercises.filter(ex => today.sportDone[ex.id]).length;
-  document.getElementById("sportProgTxt").textContent = `${done}/${routine.exercises.length}`;
-  document.getElementById("sportProgBar").style.width = routine.exercises.length ? (done/routine.exercises.length*100)+"%" : "0%";
+  cardioWrap.appendChild(cardioLabel);
+
+  const cardioDetail = document.createElement("div");
+  cardioDetail.className = "sport-item-detail";
+  const typeSel = document.createElement("select");
+  typeSel.innerHTML = `<option value="marche">Marche</option><option value="footing">Footing</option>`;
+  typeSel.value = s.cardioType;
+  typeSel.addEventListener("change", (e) => { s.cardioType = e.target.value; persist(); });
+  const distInput = document.createElement("input");
+  distInput.type = "number"; distInput.min = "0"; distInput.step = "0.1"; distInput.value = s.cardioDistance;
+  distInput.addEventListener("change", (e) => { s.cardioDistance = Math.max(0, parseFloat(e.target.value)||0); persist(); });
+  const durInput = document.createElement("input");
+  durInput.type = "number"; durInput.min = "0"; durInput.value = s.cardioDuration;
+  durInput.addEventListener("change", (e) => { s.cardioDuration = Math.max(0, parseInt(e.target.value)||0); persist(); });
+  cardioDetail.append(typeSel, distInput, document.createTextNode(" km"), durInput, document.createTextNode(" min"));
+  cardioWrap.appendChild(cardioDetail);
+  container.appendChild(cardioWrap);
+
+  const mobWrap = document.createElement("div");
+  mobWrap.className = "sport-item" + (s.mobilityDone ? " done" : "");
+  const mobLabel = document.createElement("label");
+  mobLabel.className = "check-item" + (s.mobilityDone ? " done" : "");
+  mobLabel.innerHTML = `<input type="checkbox" ${s.mobilityDone?"checked":""}><span class="txt"><span class="t">Routine mobilité</span></span>`;
+  mobLabel.querySelector("input").addEventListener("change", (e) => {
+    s.mobilityDone = e.target.checked; persist(); renderSportEverywhere();
+  });
+  mobWrap.appendChild(mobLabel);
+  container.appendChild(mobWrap);
+
+  const gymWrap = document.createElement("div");
+  gymWrap.className = "sport-item" + (s.gymDone ? " done" : "");
+  const gymLabel = document.createElement("label");
+  gymLabel.className = "check-item" + (s.gymDone ? " done" : "");
+  gymLabel.innerHTML = `<input type="checkbox" ${s.gymDone?"checked":""}><span class="txt"><span class="t">Séance gym</span></span>`;
+  gymLabel.querySelector("input").addEventListener("change", (e) => {
+    s.gymDone = e.target.checked; persist(); renderSportEverywhere();
+  });
+  gymWrap.appendChild(gymLabel);
+
+  const gymDetail = document.createElement("div");
+  gymDetail.className = "sport-item-detail";
+  const gymSel = document.createElement("select");
+  gymSel.innerHTML = Object.keys(GYM_TYPES).map(id => `<option value="${id}">${GYM_TYPES[id]}</option>`).join("");
+  gymSel.value = s.gymType;
+  gymSel.addEventListener("change", (e) => { s.gymType = e.target.value; persist(); });
+  gymDetail.appendChild(gymSel);
+  gymWrap.appendChild(gymDetail);
+  container.appendChild(gymWrap);
+}
+
+function renderSportProgress(){
+  const s = today.sport;
+  const done = [s.cardioDone, s.mobilityDone, s.gymDone].filter(Boolean).length;
+  const bar = document.getElementById("sportProgBar");
+  const txt = document.getElementById("sportProgTxt");
+  if(bar) bar.style.width = (done >= 1 ? 100 : 0)+"%";
+  if(txt) txt.textContent = done >= 1 ? `Objectif atteint ✓${done > 1 ? ` (+${done-1} bonus)` : ""}` : "Objectif : 1 case sur 3";
+}
+
+function renderSportEverywhere(){
+  const cardContainer = document.getElementById("sportChecklist");
+  if(cardContainer) renderSportInto(cardContainer);
+  const pageContainer = document.getElementById("sportPageBody");
+  if(pageContainer) renderSportInto(pageContainer);
+  renderSportProgress();
+  renderProgress();
+  renderPills();
 }
 
 function renderCultureCard(){
@@ -433,10 +453,10 @@ function renderPills(){
 }
 
 function renderProgress(){
-  const routine = SPORT_ROUTINES[today.sportRoutine];
   const topic = CULTURE_TOPICS[today.cultureTopic];
-  let total = routine.exercises.length + topic.tasks.length + LECTURE_TASKS.length + HABITS_CONFIG.length + 1;
-  let done = routine.exercises.filter(e => today.sportDone[e.id]).length
+  const sportObjectiveMet = (today.sport.cardioDone || today.sport.mobilityDone || today.sport.gymDone) ? 1 : 0;
+  let total = 1 + topic.tasks.length + LECTURE_TASKS.length + HABITS_CONFIG.length + 1;
+  let done = sportObjectiveMet
     + topic.tasks.filter(t => today.cultureDone[t.id]).length
     + LECTURE_TASKS.filter(t => today.lectureDone[t.id]).length
     + HABITS_CONFIG.filter(h => h.type==="boolean" ? !!today.habits[h.id] : (today.habits[h.id]||0) >= h.target).length
@@ -476,7 +496,8 @@ document.getElementById("qaNote").addEventListener("click", () => {
 
 function renderToday(){
   renderGreeting();
-  renderSportCard();
+  renderSportInto(document.getElementById("sportChecklist"));
+  renderSportProgress();
   renderCultureCard();
   renderLectureCard();
   renderCommCard();
@@ -489,25 +510,7 @@ function renderToday(){
 /* ---------------- Render: Sport page ---------------- */
 
 function renderSportPage(){
-  const wrap = document.getElementById("sportPageBody");
-  wrap.innerHTML = "";
-  Object.keys(SPORT_ROUTINES).forEach(id => {
-    const routine = SPORT_ROUTINES[id];
-    const block = document.createElement("div");
-    block.className = "routine-block";
-    const isToday = id === today.sportRoutine;
-    block.innerHTML = `<h3>${routine.label}${isToday ? " — routine du jour" : ""}</h3>`;
-    const list = document.createElement("div");
-    list.className = "checklist";
-    routine.exercises.forEach(ex => {
-      list.appendChild(checkItem(ex, isToday && !!today.sportDone[ex.id], (checked) => {
-        if(!isToday) return;
-        today.sportDone[ex.id] = checked; persist(); renderProgress(); renderPills();
-      }));
-    });
-    block.appendChild(list);
-    wrap.appendChild(block);
-  });
+  renderSportInto(document.getElementById("sportPageBody"));
 }
 
 /* ---------------- Render: Culture page ---------------- */

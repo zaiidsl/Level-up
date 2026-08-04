@@ -68,7 +68,7 @@
       <div class="grid3">
         <div class="card" id="sportCard">
           <div class="card-head"><span class="emoji">🏋️</span><h3>SPORT</h3></div>
-          <div class="card-sub"><span class="caption">Routine du jour</span><select id="routineSelect"></select></div>
+          <p class="card-sub"><span class="caption">Objectif : 1 case sur 3 (le reste, c'est du bonus)</span></p>
           <div class="checklist" id="sportChecklist"></div>
           <div class="card-progress"><span id="sportProgTxt">0/0</span><div class="bar"><div class="bar-fill" id="sportProgBar" style="width:0%"></div></div></div>
           <button class="card-btn" data-goto="sport">Voir le détail de la séance ›</button>
@@ -147,8 +147,10 @@
 
     <!-- ================= SPORT ================= -->
     <section class="page" data-page="sport">
-      <div class="page-title"><h2>🏋️ Sport — toutes les routines</h2></div>
-      <div id="sportPageBody"></div>
+      <div class="page-title"><h2>🏋️ Sport — plan du jour</h2></div>
+      <div class="routine-block">
+        <div class="checklist" id="sportPageBody"></div>
+      </div>
     </section>
 
     <!-- ================= CULTURE ================= -->
