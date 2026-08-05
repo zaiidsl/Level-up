@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v12";
 const CACHE_NAME = `dossier-cg-${CACHE_VERSION}`;
 
 const APP_SHELL = [

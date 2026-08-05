@@ -7,7 +7,7 @@
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#14161c">
-<meta name="description" content="Tableau de bord quotidien : sport, culture générale, lecture et habitudes.">
+<meta name="description" content="Tableau de bord quotidien : sport, culture générale et lecture.">
 
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -26,12 +26,10 @@
     <div class="brand">Z</div>
     <ul class="nav" id="nav">
       <li><button data-page="today" class="active"><span class="icon">🏠</span><span>Mon Dashboard</span></button></li>
-      <li><button data-page="today"><span class="icon">☀️</span><span>Aujourd'hui</span></button></li>
       <li class="nav-gap"></li>
       <li><button data-page="sport"><span class="icon">🏋️</span><span>Sport</span></button></li>
       <li><button data-page="culture"><span class="icon">🌍</span><span>Culture</span></button></li>
       <li><button data-page="lecture"><span class="icon">📖</span><span>Lecture</span></button></li>
-      <li><button data-page="habitudes"><span class="icon">🎯</span><span>Habitudes</span></button></li>
       <li><button data-page="stats"><span class="icon">📊</span><span>Statistiques</span></button></li>
       <li><button data-page="notes"><span class="icon">📝</span><span>Notes</span></button></li>
     </ul>
@@ -91,27 +89,10 @@
         </div>
       </div>
 
-      <div class="grid4">
-        <div class="card" id="commCard">
-          <div class="card-head"><span class="emoji">💬</span><h3>COMMUNICATION</h3></div>
-          <p class="card-sub" style="display:block;"><span class="caption">Objectif du jour</span></p>
-          <div class="objective-box" id="commTip"></div>
-          <label class="check-item" id="commCheck" style="margin-top:auto;">
-            <input type="checkbox" id="commCheckbox">
-            <span class="txt"><span class="t">Objectif posé aujourd'hui</span><span class="s" id="commTime"></span></span>
-          </label>
-        </div>
-
-        <div class="card" id="habitCard">
-          <div class="card-head"><span class="emoji">📅</span><h3>HABITUDES</h3></div>
-          <p class="card-sub"><span class="caption">Objectif : 1 habitude sur 4 (le reste, c'est du bonus)</span></p>
-          <div id="habitList" style="margin-top:0;"></div>
-          <div class="card-progress"><span id="habitProgTxt">0/1</span><div class="bar"><div class="bar-fill" id="habitProgBar" style="width:0%"></div></div></div>
-          <button class="card-btn" data-goto="habitudes">Voir toutes les habitudes ›</button>
-        </div>
-
+      <div class="grid2">
         <div class="card" id="calCard">
           <div class="card-head"><span class="emoji">🗓️</span><h3>CALENDRIER</h3></div>
+          <p class="card-sub"><span class="caption">Clique un jour pour voir le détail</span></p>
           <div class="cal-head">
             <button id="calPrev">‹</button>
             <span class="cal-title" id="calTitle"></span>
@@ -136,7 +117,6 @@
             <button data-goto="sport">🏋️ Séance sport</button>
             <button id="qaNote">📝 Note</button>
             <button data-goto="lecture">📖 Lecture</button>
-            <button data-goto="habitudes">🎯 Habitude</button>
           </div>
         </div>
         <div class="weekly-goal" id="weeklyGoalBtn">
@@ -179,12 +159,6 @@
       <div id="booksList"></div>
     </section>
 
-    <!-- ================= HABITUDES ================= -->
-    <section class="page" data-page="habitudes">
-      <div class="page-title"><h2>🎯 Habitudes — 7 derniers jours</h2></div>
-      <div id="habitsPageBody"></div>
-    </section>
-
     <!-- ================= STATS ================= -->
     <section class="page" data-page="stats">
       <div class="page-title"><h2>📊 Statistiques</h2></div>
@@ -199,6 +173,16 @@
 
     <footer>DOSSIER PERSONNEL — USAGE STRICTEMENT INDIVIDUEL</footer>
   </main>
+</div>
+
+<div class="day-modal-overlay" id="dayModalOverlay">
+  <div class="day-modal">
+    <div class="day-modal-head">
+      <h3 id="dayModalTitle"></h3>
+      <button id="dayModalClose">✕</button>
+    </div>
+    <div class="day-modal-body" id="dayModalBody"></div>
+  </div>
 </div>
 
 <script src="app.js"></script>

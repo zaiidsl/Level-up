@@ -13,7 +13,7 @@ const GYM_BY_WEEKDAY = {1:"push", 2:"pull", 3:"legs", 4:"kettlebell", 5:"push", 
 const CULTURE_TOPICS = {
   economie: { label:"Économie", rank:"01", day:"Lun · Mer",
     tasks:[
-      {id:"lecture", label:"Lecture du jour", meta:"15 min", sub:`<a href="https://www.lemonde.fr/economie/" target="_blank" rel="noopener">Le Monde — Économie</a>`},
+      {id:"lecture", label:"Article du jour", meta:"15 min", sub:`<a href="https://www.lemonde.fr/economie/" target="_blank" rel="noopener">Le Monde — Économie</a>`},
       {id:"resume", label:"Résumer l'article", meta:"10 min", sub:"3 idées clés"},
       {id:"note", label:"Prendre une note", meta:"5 min", sub:"Ce que j'ai retenu"},
     ],
@@ -66,23 +66,6 @@ const LECTURE_TASKS = [
   {id:"citation", label:"Citation du jour"},
 ];
 
-const COMM_TIPS = {
-  1:"Aujourd'hui : poser une question de relance au lieu de juste acquiescer",
-  2:"Aujourd'hui : résumer une idée complexe en une phrase simple",
-  3:"Aujourd'hui : reformuler ce que l'autre vient de dire avant de répondre",
-  4:"Aujourd'hui : admettre un point que tu ne connais pas, avec curiosité",
-  5:"Aujourd'hui : varier le registre — parler légèrement d'un sujet sérieux",
-  6:"Aujourd'hui : creuser une couche de plus avec un 'pourquoi selon toi ?'",
-  0:"Aujourd'hui : qu'est-ce que tu as retenu ? Qu'est-ce que tu veux creuser la semaine prochaine ?",
-};
-
-const HABITS_CONFIG = [
-  {id:"marche", icon:"🚶", label:"Marche", unit:"pas", type:"counter", target:8000},
-  {id:"mobilite", icon:"🧘", label:"Mobilité", unit:"min", type:"counter", target:15},
-  {id:"ecran", icon:"📵", label:"Pas d'écran avant 23h", type:"boolean"},
-  {id:"sommeil", icon:"🌙", label:"Dormir avant 23h", type:"boolean"},
-];
-
 /* ---------------- Storage ---------------- */
 
 function todayKey(d = new Date()){
@@ -110,9 +93,6 @@ function emptyDay(){
     cultureDone:{},
     lecturePages:0,
     lectureDone:{},
-    habits:{},
-    commsDone:false,
-    commsTime:"",
     freeTasks:[],
   };
 }
@@ -123,10 +103,11 @@ function loadConfig(){
     if(c) return c;
   }catch(e){}
   return {
-    books:[{id:"b1", title:"Prisoners of Geography", author:"Tim Marshall", totalPages:300}],
+    books:[{id:"b1", title:"Prisoners of Geography", author:"Tim Marshall", totalPages:300, notes:[]}],
     currentBookId:"b1",
     notes:[],
     weeklyGoal:"Comprendre l'inflation et ses impacts",
+    cultureNotes:[],
   };
 }
 function saveConfig(c){
@@ -140,6 +121,8 @@ const KEY = todayKey();
 if(!history[KEY]) history[KEY] = emptyDay();
 let today = history[KEY];
 if(!today.sport) today.sport = emptyDay().sport;
+config.books.forEach(b => { if(!b.notes) b.notes = []; });
+if(!config.cultureNotes) config.cultureNotes = [];
 
 function persist(){
   history[KEY] = today;
@@ -148,6 +131,9 @@ function persist(){
 
 let calMonth = new Date().getMonth();
 let calYear = new Date().getFullYear();
+const lectureExpanded = {idee:false, citation:false};
+const bookNotesExpanded = {};
+const cultureExpanded = {};
 
 /* ---------------- Router ---------------- */
 
@@ -157,7 +143,6 @@ function goto(page){
   if(page === "sport") renderSportPage();
   if(page === "culture") renderCulturePage();
   if(page === "lecture") renderLecturePage();
-  if(page === "habitudes") renderHabitsPage();
   if(page === "stats") renderStatsPage();
   if(page === "notes") renderNotesPage();
 }
@@ -303,18 +288,89 @@ function renderSportEverywhere(){
   renderPills();
 }
 
+function buildCultureItem(task, kind){
+  const topicId = today.cultureTopic;
+  const notes = config.cultureNotes || [];
+  const todayCount = notes.filter(n => n.topicId===topicId && n.taskId===task.id && n.date===todayKey()).length;
+  const doneToday = !!today.cultureDone[task.id];
+  const expanded = cultureExpanded[task.id];
+
+  const wrap = document.createElement("div");
+  wrap.className = "sport-item" + (doneToday ? " done" : "");
+
+  const header = document.createElement("button");
+  header.type = "button";
+  header.className = "check-item note-item-head" + (doneToday ? " done" : "");
+  header.innerHTML = `
+    <span class="note-check">${doneToday ? "✅" : "☐"}</span>
+    <span class="txt"><span class="t">${task.label}</span>${todayCount ? `<span class="s">${todayCount} ${kind==="title"?"titre":"note"}${todayCount>1?"s":""} aujourd'hui</span>` : (task.sub ? `<span class="s">${task.sub}</span>` : "")}</span>
+    <span class="note-chevron">${expanded ? "▾" : "▸"}</span>
+  `;
+  header.addEventListener("click", () => {
+    cultureExpanded[task.id] = !cultureExpanded[task.id];
+    renderCultureCard();
+  });
+  wrap.appendChild(header);
+
+  if(expanded){
+    const body = document.createElement("div");
+    body.className = "note-item-body";
+    const input = document.createElement(kind === "title" ? "input" : "textarea");
+    if(kind === "title"){
+      input.type = "text";
+      input.placeholder = "Titre de l'article / podcast…";
+    }else{
+      input.rows = 3;
+      input.placeholder = kind === "resume" ? "Écris ton résumé…" : "Écris ta note…";
+    }
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.textContent = "Enregistrer";
+    saveBtn.className = "note-save-btn";
+    saveBtn.addEventListener("click", () => {
+      const text = input.value.trim();
+      if(!text) return;
+      if(!config.cultureNotes) config.cultureNotes = [];
+      config.cultureNotes.unshift({id:"cnote_"+Date.now(), topicId, taskId:task.id, kind, text, date:todayKey()});
+      saveConfig(config);
+      today.cultureDone[task.id] = true;
+      persist();
+      cultureExpanded[task.id] = false;
+      renderCultureCard();
+      renderProgress();
+      renderPills();
+    });
+    body.append(input, saveBtn);
+    wrap.appendChild(body);
+  }
+
+  return wrap;
+}
+
 function renderCultureCard(){
   const sel = document.getElementById("topicSelect");
   populateSelect(sel, Object.keys(CULTURE_TOPICS).map(id => ({id, label:CULTURE_TOPICS[id].label})), today.cultureTopic);
-  sel.onchange = () => { today.cultureTopic = sel.value; persist(); renderCultureCard(); renderProgress(); };
+  sel.onchange = () => {
+    today.cultureTopic = sel.value;
+    Object.keys(cultureExpanded).forEach(k => delete cultureExpanded[k]);
+    persist(); renderCultureCard(); renderProgress();
+  };
 
   const topic = CULTURE_TOPICS[today.cultureTopic];
   const list = document.getElementById("cultureChecklist");
   list.innerHTML = "";
-  topic.tasks.forEach(t => {
-    list.appendChild(checkItem(t, !!today.cultureDone[t.id], (checked) => {
-      today.cultureDone[t.id] = checked; persist(); renderCultureCard(); renderProgress(); renderPills();
-    }));
+  topic.tasks.forEach((t, i) => {
+    if(i === 0){
+      list.appendChild(buildCultureItem(t, "title"));
+    }else if(t.id === "resume"){
+      list.appendChild(buildCultureItem(t, "resume"));
+    }else if(t.id === "note"){
+      list.appendChild(buildCultureItem(t, "note"));
+    }else{
+      list.appendChild(checkItem(t, !!today.cultureDone[t.id], (checked) => {
+        today.cultureDone[t.id] = checked; persist(); renderCultureCard(); renderProgress(); renderPills();
+      }));
+    }
   });
   const done = topic.tasks.filter(t => today.cultureDone[t.id]).length;
   document.getElementById("cultureObjectiveCaption").textContent = `Objectif : 1 tâche sur ${topic.tasks.length} (le reste, c'est du bonus)`;
@@ -326,19 +382,73 @@ function currentBook(){
   return config.books.find(b => b.id === config.currentBookId) || config.books[0];
 }
 
+function buildNoteItem(type, label){
+  const book = currentBook();
+  const todayCount = (book && book.notes) ? book.notes.filter(n => n.type===type && n.date===todayKey()).length : 0;
+  const doneToday = !!today.lectureDone[type];
+  const expanded = lectureExpanded[type];
+
+  const wrap = document.createElement("div");
+  wrap.className = "sport-item" + (doneToday ? " done" : "");
+
+  const header = document.createElement("button");
+  header.type = "button";
+  header.className = "check-item note-item-head" + (doneToday ? " done" : "");
+  header.innerHTML = `
+    <span class="note-check">${doneToday ? "✅" : "☐"}</span>
+    <span class="txt"><span class="t">${label}</span>${todayCount ? `<span class="s">${todayCount} note${todayCount>1?"s":""} aujourd'hui</span>` : ""}</span>
+    <span class="note-chevron">${expanded ? "▾" : "▸"}</span>
+  `;
+  header.addEventListener("click", () => {
+    lectureExpanded[type] = !lectureExpanded[type];
+    renderLectureCard();
+  });
+  wrap.appendChild(header);
+
+  if(expanded){
+    const body = document.createElement("div");
+    body.className = "note-item-body";
+    const textarea = document.createElement("textarea");
+    textarea.rows = 2;
+    textarea.placeholder = type==="idee" ? "Écris ton idée…" : "Écris la citation…";
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.textContent = "Enregistrer";
+    saveBtn.className = "note-save-btn";
+    saveBtn.addEventListener("click", () => {
+      const text = textarea.value.trim();
+      if(!text) return;
+      if(!book){ alert("Ajoute d'abord un livre dans ta bibliothèque."); return; }
+      if(!book.notes) book.notes = [];
+      book.notes.unshift({id:"note_"+Date.now(), type, text, date:todayKey()});
+      saveConfig(config);
+      today.lectureDone[type] = true;
+      persist();
+      lectureExpanded[type] = false;
+      renderLectureCard();
+      renderProgress();
+      renderPills();
+    });
+    body.append(textarea, saveBtn);
+    wrap.appendChild(body);
+  }
+
+  return wrap;
+}
+
 function renderLectureCard(){
   document.getElementById("lectureObjectiveCaption").textContent = "Livre actuel";
   const sel = document.getElementById("bookSelect");
   populateSelect(sel, config.books.map(b => ({id:b.id, label:b.title})), config.currentBookId);
-  sel.onchange = () => { config.currentBookId = sel.value; saveConfig(config); renderLectureCard(); };
+  sel.onchange = () => { config.currentBookId = sel.value; lectureExpanded.idee = false; lectureExpanded.citation = false; saveConfig(config); renderLectureCard(); };
 
   const list = document.getElementById("lectureChecklist");
   list.innerHTML = "";
-  LECTURE_TASKS.forEach(t => {
-    list.appendChild(checkItem(t, !!today.lectureDone[t.id], (checked) => {
-      today.lectureDone[t.id] = checked; persist(); renderLectureCard(); renderProgress(); renderPills();
-    }));
-  });
+  list.appendChild(checkItem(LECTURE_TASKS[0], !!today.lectureDone.lire, (checked) => {
+    today.lectureDone.lire = checked; persist(); renderProgress(); renderPills();
+  }));
+  list.appendChild(buildNoteItem("idee", "Noter une idée importante"));
+  list.appendChild(buildNoteItem("citation", "Citation du jour"));
 
   const pagesRow = document.createElement("div");
   pagesRow.className = "check-item";
@@ -358,53 +468,6 @@ function renderLectureCard(){
   const doneCount = LECTURE_TASKS.filter(t => today.lectureDone[t.id]).length;
   document.getElementById("lectureProgTxt").textContent = doneCount >= 1 ? `Objectif atteint ✓${doneCount > 1 ? ` (+${doneCount-1} bonus)` : ""}` : "Objectif : 1 tâche sur 3";
   document.getElementById("lectureProgBar").style.width = (doneCount >= 1 ? 100 : 0)+"%";
-}
-
-function renderCommCard(){
-  document.getElementById("commTip").textContent = COMM_TIPS[new Date().getDay()];
-  const box = document.getElementById("commCheckbox");
-  box.checked = !!today.commsDone;
-  document.getElementById("commCheck").classList.toggle("done", !!today.commsDone);
-  document.getElementById("commTime").textContent = today.commsDone ? today.commsTime : "";
-  box.onchange = () => {
-    today.commsDone = box.checked;
-    today.commsTime = box.checked ? new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) : "";
-    persist(); renderCommCard(); renderProgress();
-  };
-}
-
-function habitsAchievedCount(){
-  return HABITS_CONFIG.filter(h => h.type==="boolean" ? !!today.habits[h.id] : (today.habits[h.id]||0) >= h.target).length;
-}
-
-function renderHabitProgress(){
-  const done = habitsAchievedCount();
-  const txt = document.getElementById("habitProgTxt");
-  const bar = document.getElementById("habitProgBar");
-  if(txt) txt.textContent = done >= 1 ? `Objectif atteint ✓${done > 1 ? ` (+${done-1} bonus)` : ""}` : "Objectif : 1 habitude";
-  if(bar) bar.style.width = (done >= 1 ? 100 : 0)+"%";
-}
-
-function renderHabitMiniCard(){
-  const wrap = document.getElementById("habitList");
-  wrap.innerHTML = "";
-  HABITS_CONFIG.forEach(h => {
-    const val = today.habits[h.id];
-    const row = document.createElement("div");
-    row.className = "habit-row";
-    if(h.type === "boolean"){
-      row.innerHTML = `<span class="emoji">${h.icon}</span><span class="h-label">${h.label}</span>`;
-      const cb = document.createElement("input");
-      cb.type = "checkbox"; cb.checked = !!val;
-      cb.addEventListener("change", () => { today.habits[h.id] = cb.checked; persist(); renderProgress(); renderHabitProgress(); renderPills(); });
-      row.appendChild(cb);
-    }else{
-      const ok = (val||0) >= h.target;
-      row.innerHTML = `<span class="emoji">${h.icon}</span><span class="h-label">${h.label} ${h.target} ${h.unit}</span><span class="h-val ${ok?"ok":""}">${ok?"✓ ":""}${val||0}</span>`;
-    }
-    wrap.appendChild(row);
-  });
-  renderHabitProgress();
 }
 
 function renderCalendar(){
@@ -436,12 +499,66 @@ function renderCalendar(){
       if(key === todayStr) el.classList.add("today");
       const rec = history[key];
       if(rec && (dayHasCategory(rec,"sport") || dayHasCategory(rec,"culture") || dayHasCategory(rec,"lecture"))) el.classList.add("has-data");
+      el.classList.add("clickable");
+      el.addEventListener("click", () => openDayModal(key));
     }
     grid.appendChild(el);
   });
 }
 document.getElementById("calPrev").addEventListener("click", () => { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); });
 document.getElementById("calNext").addEventListener("click", () => { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); });
+
+function openDayModal(key){
+  const [y,m,d] = key.split("-").map(Number);
+  const dateObj = new Date(y, m-1, d);
+  document.getElementById("dayModalTitle").textContent = DAY_NAMES[dateObj.getDay()] + " " + dateObj.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+
+  const rec = key === KEY ? today : history[key];
+  const body = document.getElementById("dayModalBody");
+
+  if(!rec){
+    body.innerHTML = `<p class="day-empty">Aucune donnée enregistrée ce jour-là.</p>`;
+  }else{
+    const sections = [];
+
+    if(rec.sport){
+      const s = rec.sport;
+      const items = [];
+      items.push(`<li class="${s.cardioDone?"ok":"no"}">${s.cardioDone?"✅":"☐"} ${s.cardioType==="footing"?"Footing":"Marche"}${(s.cardioDistance||s.cardioDuration)?` — ${s.cardioDistance||0} km / ${s.cardioDuration||0} min`:""}</li>`);
+      items.push(`<li class="${s.mobilityDone?"ok":"no"}">${s.mobilityDone?"✅":"☐"} Routine mobilité</li>`);
+      items.push(`<li class="${s.gymDone?"ok":"no"}">${s.gymDone?"✅":"☐"} Séance gym${s.gymType?` (${GYM_TYPES[s.gymType]||s.gymType})`:""}</li>`);
+      sections.push(`<div class="day-section"><h4>🏋️ Sport</h4><ul>${items.join("")}</ul></div>`);
+    }
+
+    if(rec.cultureTopic){
+      const topic = CULTURE_TOPICS[rec.cultureTopic];
+      const items = (topic ? topic.tasks : []).map(t => {
+        const done = !!(rec.cultureDone && rec.cultureDone[t.id]);
+        return `<li class="${done?"ok":"no"}">${done?"✅":"☐"} ${t.label}</li>`;
+      });
+      sections.push(`<div class="day-section"><h4>🧠 Culture — ${topic ? topic.label : rec.cultureTopic}</h4><ul>${items.join("")}</ul></div>`);
+    }
+
+    const lectureItems = LECTURE_TASKS.map(t => {
+      const done = !!(rec.lectureDone && rec.lectureDone[t.id]);
+      return `<li class="${done?"ok":"no"}">${done?"✅":"☐"} ${t.label}</li>`;
+    });
+    lectureItems.push(`<li class="ok">📄 Avancement : ${rec.lecturePages||0} pages</li>`);
+    sections.push(`<div class="day-section"><h4>📖 Lecture</h4><ul>${lectureItems.join("")}</ul></div>`);
+
+    body.innerHTML = sections.join("");
+  }
+
+  document.getElementById("dayModalOverlay").classList.add("open");
+}
+
+function closeDayModal(){
+  document.getElementById("dayModalOverlay").classList.remove("open");
+}
+document.getElementById("dayModalClose").addEventListener("click", closeDayModal);
+document.getElementById("dayModalOverlay").addEventListener("click", (e) => {
+  if(e.target.id === "dayModalOverlay") closeDayModal();
+});
 
 function weeklyCatCount(cat){
   return last7Dates().filter(k => dayHasCategory(history[k], cat)).length;
@@ -472,9 +589,8 @@ function renderProgress(){
   const sportObjectiveMet = (today.sport.cardioDone || today.sport.mobilityDone || today.sport.gymDone) ? 1 : 0;
   const cultureObjectiveMet = topic.tasks.some(t => today.cultureDone[t.id]) ? 1 : 0;
   const lectureObjectiveMet = LECTURE_TASKS.some(t => today.lectureDone[t.id]) ? 1 : 0;
-  const habitsObjectiveMet = habitsAchievedCount() >= 1 ? 1 : 0;
-  let total = 5;
-  let done = sportObjectiveMet + cultureObjectiveMet + lectureObjectiveMet + habitsObjectiveMet + (today.commsDone ? 1 : 0);
+  let total = 3;
+  let done = sportObjectiveMet + cultureObjectiveMet + lectureObjectiveMet;
   const pct = total ? Math.round(done/total*100) : 0;
   document.getElementById("progressPct").textContent = pct+"%";
   document.getElementById("progressBar").style.width = pct+"%";
@@ -514,8 +630,6 @@ function renderToday(){
   renderSportProgress();
   renderCultureCard();
   renderLectureCard();
-  renderCommCard();
-  renderHabitMiniCard();
   renderWeeklyGoal();
   renderProgress();
   renderPills();
@@ -567,10 +681,15 @@ function renderLecturePage(){
   if(!config.books.length){ wrap.innerHTML = `<p class="empty">Aucun livre pour le moment.</p>`; return; }
   config.books.forEach(b => {
     const isCurrent = b.id === config.currentBookId;
-    const pages = isCurrent ? today.lecturePages : 0;
+    const notes = b.notes || [];
+    const expanded = !!bookNotesExpanded[b.id];
+
     const el = document.createElement("div");
     el.className = "book-card" + (isCurrent ? " current" : "");
-    el.innerHTML = `
+
+    const top = document.createElement("div");
+    top.className = "book-card-top";
+    top.innerHTML = `
       <div class="b-info">
         <div class="b-title">${b.title}${isCurrent ? " · en cours" : ""}</div>
         <div class="b-author">${b.author || ""} ${b.totalPages ? "— "+b.totalPages+" pages" : ""}</div>
@@ -580,7 +699,7 @@ function renderLecturePage(){
       const btn = document.createElement("button");
       btn.textContent = "Lire maintenant";
       btn.addEventListener("click", () => { config.currentBookId = b.id; saveConfig(config); renderLecturePage(); });
-      el.appendChild(btn);
+      top.appendChild(btn);
     }
     const del = document.createElement("button");
     del.textContent = "Supprimer";
@@ -589,7 +708,47 @@ function renderLecturePage(){
       if(config.currentBookId === b.id) config.currentBookId = config.books[0] ? config.books[0].id : null;
       saveConfig(config); renderLecturePage();
     });
-    el.appendChild(del);
+    top.appendChild(del);
+    el.appendChild(top);
+
+    const toggle = document.createElement("button");
+    toggle.className = "book-notes-toggle";
+    toggle.textContent = `${expanded ? "▾" : "▸"} ${notes.length} note${notes.length !== 1 ? "s" : ""}`;
+    toggle.addEventListener("click", () => {
+      bookNotesExpanded[b.id] = !bookNotesExpanded[b.id];
+      renderLecturePage();
+    });
+    el.appendChild(toggle);
+
+    if(expanded){
+      if(!notes.length){
+        const empty = document.createElement("p");
+        empty.className = "book-notes-empty";
+        empty.textContent = "Aucune note pour ce livre pour le moment.";
+        el.appendChild(empty);
+      }else{
+        const list = document.createElement("div");
+        list.className = "book-notes-list";
+        notes.forEach(n => {
+          const row = document.createElement("div");
+          row.className = "book-note";
+          row.innerHTML = `
+            <span class="bn-icon">${n.type === "citation" ? "❝" : "💡"}</span>
+            <span class="bn-body"><span class="bn-text"></span><span class="bn-date">${n.date}</span></span>
+            <button class="bn-del" title="Supprimer">✕</button>
+          `;
+          row.querySelector(".bn-text").textContent = n.text;
+          row.querySelector(".bn-del").addEventListener("click", () => {
+            b.notes = b.notes.filter(x => x.id !== n.id);
+            saveConfig(config);
+            renderLecturePage();
+          });
+          list.appendChild(row);
+        });
+        el.appendChild(list);
+      }
+    }
+
     wrap.appendChild(el);
   });
 }
@@ -604,60 +763,6 @@ document.getElementById("addBookBtn").addEventListener("click", () => {
   saveConfig(config);
   renderLecturePage();
 });
-
-/* ---------------- Render: Habitudes page ---------------- */
-
-function renderHabitsPage(){
-  const wrap = document.getElementById("habitsPageBody");
-  wrap.innerHTML = "";
-  const dates = last7Dates();
-
-  const header = document.createElement("div");
-  header.className = "habit-week";
-  header.innerHTML = `<div></div>` + dates.map(k => {
-    const d = new Date(k);
-    return `<div style="text-align:center;color:var(--muted);">${DAY_NAMES[d.getDay()].slice(0,2)}</div>`;
-  }).join("");
-  wrap.appendChild(header);
-
-  HABITS_CONFIG.forEach(h => {
-    const row = document.createElement("div");
-    row.className = "habit-week";
-    let cells = `<div>${h.icon} ${h.label}</div>`;
-    dates.forEach(k => {
-      const rec = history[k];
-      const val = rec ? rec.habits[h.id] : undefined;
-      const ok = h.type === "boolean" ? !!val : (val||0) >= h.target;
-      cells += `<div class="hw-dot ${ok ? "ok" : ""}"></div>`;
-    });
-    row.innerHTML = cells;
-    wrap.appendChild(row);
-  });
-
-  const editBlock = document.createElement("div");
-  editBlock.className = "routine-block";
-  editBlock.innerHTML = `<h3>Aujourd'hui</h3>`;
-  HABITS_CONFIG.forEach(h => {
-    const val = today.habits[h.id];
-    const row = document.createElement("div");
-    row.className = "habit-row";
-    if(h.type === "boolean"){
-      row.innerHTML = `<span class="emoji">${h.icon}</span><span class="h-label">${h.label}</span>`;
-      const cb = document.createElement("input");
-      cb.type = "checkbox"; cb.checked = !!val;
-      cb.addEventListener("change", () => { today.habits[h.id] = cb.checked; persist(); renderPills(); });
-      row.appendChild(cb);
-    }else{
-      row.innerHTML = `<span class="emoji">${h.icon}</span><span class="h-label">${h.label} (objectif ${h.target} ${h.unit})</span>`;
-      const input = document.createElement("input");
-      input.type = "number"; input.min = "0"; input.value = val||0;
-      input.addEventListener("change", () => { today.habits[h.id] = Math.max(0, parseInt(input.value)||0); persist(); renderPills(); });
-      row.appendChild(input);
-    }
-    editBlock.appendChild(row);
-  });
-  wrap.appendChild(editBlock);
-}
 
 /* ---------------- Render: Stats page ---------------- */
 
