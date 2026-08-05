@@ -76,7 +76,7 @@
 
         <div class="card" id="cultureCard">
           <div class="card-head"><span class="emoji">🧠</span><h3>CULTURE</h3></div>
-          <div class="card-sub"><span class="caption">Sujet du jour</span><select id="topicSelect"></select></div>
+          <div class="card-sub"><span class="caption" id="cultureObjectiveCaption"></span><select id="topicSelect"></select></div>
           <div class="checklist" id="cultureChecklist"></div>
           <div class="card-progress"><span id="cultureProgTxt">0/0</span><div class="bar"><div class="bar-fill" id="cultureProgBar" style="width:0%"></div></div></div>
           <button class="card-btn" data-goto="culture">Voir mes notes ›</button>
@@ -84,9 +84,9 @@
 
         <div class="card" id="lectureCard">
           <div class="card-head"><span class="emoji">📖</span><h3>LECTURE</h3></div>
-          <div class="card-sub"><span class="caption">Livre actuel</span><select id="bookSelect"></select></div>
+          <div class="card-sub"><span class="caption" id="lectureObjectiveCaption"></span><select id="bookSelect"></select></div>
           <div class="checklist" id="lectureChecklist"></div>
-          <div class="card-progress"><span id="lectureProgTxt">0/0 pages</span><div class="bar"><div class="bar-fill" id="lectureProgBar" style="width:0%"></div></div></div>
+          <div class="card-progress"><span id="lectureProgTxt">0/0</span><div class="bar"><div class="bar-fill" id="lectureProgBar" style="width:0%"></div></div></div>
           <button class="card-btn" data-goto="lecture">Voir ma bibliothèque ›</button>
         </div>
       </div>
@@ -104,7 +104,9 @@
 
         <div class="card" id="habitCard">
           <div class="card-head"><span class="emoji">📅</span><h3>HABITUDES</h3></div>
-          <div id="habitList" style="margin-top:8px;"></div>
+          <p class="card-sub"><span class="caption">Objectif : 1 habitude sur 4 (le reste, c'est du bonus)</span></p>
+          <div id="habitList" style="margin-top:0;"></div>
+          <div class="card-progress"><span id="habitProgTxt">0/1</span><div class="bar"><div class="bar-fill" id="habitProgBar" style="width:0%"></div></div></div>
           <button class="card-btn" data-goto="habitudes">Voir toutes les habitudes ›</button>
         </div>
 

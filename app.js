@@ -317,8 +317,9 @@ function renderCultureCard(){
     }));
   });
   const done = topic.tasks.filter(t => today.cultureDone[t.id]).length;
-  document.getElementById("cultureProgTxt").textContent = `${done}/${topic.tasks.length}`;
-  document.getElementById("cultureProgBar").style.width = topic.tasks.length ? (done/topic.tasks.length*100)+"%" : "0%";
+  document.getElementById("cultureObjectiveCaption").textContent = `Objectif : 1 tâche sur ${topic.tasks.length} (le reste, c'est du bonus)`;
+  document.getElementById("cultureProgTxt").textContent = done >= 1 ? `Objectif atteint ✓${done > 1 ? ` (+${done-1} bonus)` : ""}` : "Objectif : 1 tâche";
+  document.getElementById("cultureProgBar").style.width = (done >= 1 ? 100 : 0)+"%";
 }
 
 function currentBook(){
@@ -326,6 +327,7 @@ function currentBook(){
 }
 
 function renderLectureCard(){
+  document.getElementById("lectureObjectiveCaption").textContent = "Livre actuel";
   const sel = document.getElementById("bookSelect");
   populateSelect(sel, config.books.map(b => ({id:b.id, label:b.title})), config.currentBookId);
   sel.onchange = () => { config.currentBookId = sel.value; saveConfig(config); renderLectureCard(); };
@@ -354,8 +356,8 @@ function renderLectureCard(){
   list.appendChild(pagesRow);
 
   const doneCount = LECTURE_TASKS.filter(t => today.lectureDone[t.id]).length;
-  document.getElementById("lectureProgTxt").textContent = `${today.lecturePages} / ${book ? book.totalPages : 0} pages`;
-  document.getElementById("lectureProgBar").style.width = (book && book.totalPages) ? Math.min(100, today.lecturePages/book.totalPages*100)+"%" : "0%";
+  document.getElementById("lectureProgTxt").textContent = doneCount >= 1 ? `Objectif atteint ✓${doneCount > 1 ? ` (+${doneCount-1} bonus)` : ""}` : "Objectif : 1 tâche sur 3";
+  document.getElementById("lectureProgBar").style.width = (doneCount >= 1 ? 100 : 0)+"%";
 }
 
 function renderCommCard(){
@@ -371,6 +373,18 @@ function renderCommCard(){
   };
 }
 
+function habitsAchievedCount(){
+  return HABITS_CONFIG.filter(h => h.type==="boolean" ? !!today.habits[h.id] : (today.habits[h.id]||0) >= h.target).length;
+}
+
+function renderHabitProgress(){
+  const done = habitsAchievedCount();
+  const txt = document.getElementById("habitProgTxt");
+  const bar = document.getElementById("habitProgBar");
+  if(txt) txt.textContent = done >= 1 ? `Objectif atteint ✓${done > 1 ? ` (+${done-1} bonus)` : ""}` : "Objectif : 1 habitude";
+  if(bar) bar.style.width = (done >= 1 ? 100 : 0)+"%";
+}
+
 function renderHabitMiniCard(){
   const wrap = document.getElementById("habitList");
   wrap.innerHTML = "";
@@ -382,7 +396,7 @@ function renderHabitMiniCard(){
       row.innerHTML = `<span class="emoji">${h.icon}</span><span class="h-label">${h.label}</span>`;
       const cb = document.createElement("input");
       cb.type = "checkbox"; cb.checked = !!val;
-      cb.addEventListener("change", () => { today.habits[h.id] = cb.checked; persist(); renderProgress(); });
+      cb.addEventListener("change", () => { today.habits[h.id] = cb.checked; persist(); renderProgress(); renderHabitProgress(); renderPills(); });
       row.appendChild(cb);
     }else{
       const ok = (val||0) >= h.target;
@@ -390,6 +404,7 @@ function renderHabitMiniCard(){
     }
     wrap.appendChild(row);
   });
+  renderHabitProgress();
 }
 
 function renderCalendar(){
@@ -455,16 +470,15 @@ function renderPills(){
 function renderProgress(){
   const topic = CULTURE_TOPICS[today.cultureTopic];
   const sportObjectiveMet = (today.sport.cardioDone || today.sport.mobilityDone || today.sport.gymDone) ? 1 : 0;
-  let total = 1 + topic.tasks.length + LECTURE_TASKS.length + HABITS_CONFIG.length + 1;
-  let done = sportObjectiveMet
-    + topic.tasks.filter(t => today.cultureDone[t.id]).length
-    + LECTURE_TASKS.filter(t => today.lectureDone[t.id]).length
-    + HABITS_CONFIG.filter(h => h.type==="boolean" ? !!today.habits[h.id] : (today.habits[h.id]||0) >= h.target).length
-    + (today.commsDone ? 1 : 0);
+  const cultureObjectiveMet = topic.tasks.some(t => today.cultureDone[t.id]) ? 1 : 0;
+  const lectureObjectiveMet = LECTURE_TASKS.some(t => today.lectureDone[t.id]) ? 1 : 0;
+  const habitsObjectiveMet = habitsAchievedCount() >= 1 ? 1 : 0;
+  let total = 5;
+  let done = sportObjectiveMet + cultureObjectiveMet + lectureObjectiveMet + habitsObjectiveMet + (today.commsDone ? 1 : 0);
   const pct = total ? Math.round(done/total*100) : 0;
   document.getElementById("progressPct").textContent = pct+"%";
   document.getElementById("progressBar").style.width = pct+"%";
-  document.getElementById("progressSub").textContent = `${done} / ${total} tâches complétées`;
+  document.getElementById("progressSub").textContent = `${done} / ${total} objectifs atteints`;
 }
 
 function renderWeeklyGoal(){
