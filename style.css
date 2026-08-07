@@ -345,7 +345,8 @@ footer{margin-top:24px; text-align:center; font-size:11px; color:var(--muted); l
   .app{flex-direction:column;}
   .sidebar{
     width:100%; height:auto; position:sticky; top:0; z-index:10; flex-direction:row; align-items:center;
-    padding:10px 12px; overflow-x:auto; gap:4px;
+    padding:calc(10px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) 10px calc(12px + env(safe-area-inset-left));
+    overflow-x:auto; gap:4px;
   }
   .brand{margin-bottom:0; margin-right:4px;}
   .nav{flex-direction:row; flex-shrink:0;}
@@ -353,7 +354,9 @@ footer{margin-top:24px; text-align:center; font-size:11px; color:var(--muted); l
   .nav button{padding:9px 11px;}
   .nav-gap{display:none;}
   .sidebar-footer{display:none;}
-  .content{padding:16px 14px 40px;}
+  .content{
+    padding:16px calc(14px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+  }
 }
 @media (max-width:480px){
   .grid2{grid-template-columns:1fr;}
