@@ -278,6 +278,7 @@ function dayHasCategory(rec, cat){
   if(cat === "sport") return !!(rec.sport && (rec.sport.cardioDone || rec.sport.gymDone || Object.values(sportExtrasOf(rec.sport)).some(Boolean)));
   if(cat === "culture") return Object.values(rec.cultureDone||{}).some(Boolean);
   if(cat === "lecture") return Object.values(rec.lectureDone||{}).some(Boolean) || (rec.lecturePages||0) > 0;
+  if(cat === "wird") return !!(rec.wird && (PRAYERS.some(p => rec.wird[p.id]) || rec.wird.coranDone));
   return false;
 }
 
@@ -466,7 +467,7 @@ function renderCoranItem(container){
   wrap.className = "sport-item" + (today.wird.coranDone ? " done" : "");
   const label = document.createElement("label");
   label.className = "check-item" + (today.wird.coranDone ? " done" : "");
-  label.innerHTML = `<input type="checkbox" ${today.wird.coranDone?"checked":""}><span class="txt"><span class="t">Wird Yawmi — Lecture du Coran</span></span>`;
+  label.innerHTML = `<input type="checkbox" ${today.wird.coranDone?"checked":""}><span class="txt"><span class="t">Lecture du Coran</span></span>`;
   label.querySelector("input").addEventListener("change", (e) => {
     today.wird.coranDone = e.target.checked; persist(); renderWirdEverywhere();
   });
@@ -834,6 +835,7 @@ function renderPills(){
   document.getElementById("pillSport").textContent = countLifetimeDays("sport");
   document.getElementById("pillCulture").textContent = countLifetimeDays("culture");
   document.getElementById("pillLecture").textContent = countLifetimeDays("lecture");
+  document.getElementById("pillWird").textContent = countLifetimeDays("wird");
   renderStatsMini();
   renderCalendar();
 }
