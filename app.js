@@ -1263,7 +1263,7 @@ function renderExercisePickerList(query){
       const panel = document.createElement("div");
       panel.className = "exercise-video-panel";
       if(ex.video){
-        panel.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${ex.video}" title="Démo : ${ex.name}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+        panel.innerHTML = `<iframe src="https://www.youtube.com/embed/${ex.video}?rel=0" title="Démo : ${ex.name}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
       }else{
         const q2 = encodeURIComponent(ex.name + " exercise tutorial");
         panel.innerHTML = `<p class="day-empty">Pas encore de vidéo vérifiée pour cet exercice.<br><a href="https://www.youtube.com/results?search_query=${q2}" target="_blank" rel="noopener">Chercher sur YouTube ›</a></p>`;
