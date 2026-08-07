@@ -277,6 +277,12 @@ a{color:var(--gold);}
 .manage-row button{background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:2px 4px;}
 .manage-row button:hover{color:var(--gold);}
 .manage-list .add-btn{margin-top:2px; align-self:flex-start;}
+.manage-row input[type="text"], .manage-row input[type="number"]{
+  border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:7px;
+  padding:6px 9px; font-size:13px; width:140px;
+}
+.routine-block .manage-row{margin-bottom:8px;}
+.routine-block .manage-row:last-child{margin-bottom:0;}
 
 .home-toggle{
   background:var(--bg); border:1px solid var(--border); color:var(--muted);

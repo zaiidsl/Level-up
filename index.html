@@ -33,6 +33,7 @@
       <li><button data-page="wird"><span class="icon">🕌</span><span>Prières</span></button></li>
       <li><button data-page="stats"><span class="icon">📊</span><span>Statistiques</span></button></li>
       <li><button data-page="notes"><span class="icon">📝</span><span>Notes</span></button></li>
+      <li><button data-page="profil"><span class="icon">🪪</span><span>Infos personnelles</span></button></li>
     </ul>
     <div class="sidebar-footer">
       <p class="quote">« On devient ce que l'on répète chaque jour. »<span>— Aristote</span></p>
@@ -232,6 +233,17 @@
     <section class="page" data-page="notes">
       <div class="page-title"><h2>📝 Notes</h2><button class="add-btn" id="addNoteBtn">+ Nouvelle note</button></div>
       <div class="notes-list" id="notesList"></div>
+    </section>
+
+    <!-- ================= INFOS PERSONNELLES ================= -->
+    <section class="page" data-page="profil">
+      <div class="page-title"><h2>🪪 Infos personnelles</h2></div>
+      <div class="routine-block">
+        <div class="manage-row"><span class="manage-label">Nom</span><input type="text" id="profileName" placeholder="Ton prénom"></div>
+        <div class="manage-row"><span class="manage-label">Âge</span><input type="number" id="profileAge" min="0" placeholder="Âge"></div>
+        <div class="manage-row"><span class="manage-label">Poids (kg)</span><input type="number" id="profileWeight" min="0" step="0.1" placeholder="Poids"></div>
+        <div class="manage-row"><span class="manage-label">Taille (cm)</span><input type="number" id="profileHeight" min="0" placeholder="Taille"></div>
+      </div>
     </section>
 
     <footer>DOSSIER PERSONNEL — USAGE STRICTEMENT INDIVIDUEL</footer>

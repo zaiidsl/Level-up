@@ -168,6 +168,9 @@ function loadConfig(){
     sportExtras: DEFAULT_SPORT_EXTRAS.map(t => ({...t})),
     sportOnHome: {cardio:true, gym:true},
     userName:"",
+    userAge:"",
+    userWeight:"",
+    userHeight:"",
     wirdTrackMode:"hizb",
   };
 }
@@ -188,6 +191,9 @@ if(!config.sportExtras) config.sportExtras = DEFAULT_SPORT_EXTRAS.map(t => ({...
 config.sportExtras.forEach(e => { if(e.onHome === undefined) e.onHome = true; });
 if(!config.sportOnHome) config.sportOnHome = {cardio:true, gym:true};
 if(config.userName === undefined) config.userName = "";
+if(config.userAge === undefined) config.userAge = "";
+if(config.userWeight === undefined) config.userWeight = "";
+if(config.userHeight === undefined) config.userHeight = "";
 if(!config.wirdTrackMode) config.wirdTrackMode = "hizb";
 function ensureDayShape(day){
   if(!day.sport) day.sport = emptyDay().sport;
@@ -239,6 +245,7 @@ function goto(page){
   if(page === "wird") renderWirdPage();
   if(page === "stats") renderStatsPage();
   if(page === "notes") renderNotesPage();
+  if(page === "profil") renderProfilePage();
 }
 
 document.getElementById("nav").addEventListener("click", (e) => {
@@ -301,7 +308,8 @@ function last7Dates(){
 function renderGreeting(){
   document.getElementById("greeting").textContent = config.userName ? `Bonjour ${config.userName} 👋` : "Bonjour 👋";
   const editBtn = document.getElementById("editNameBtn");
-  editBtn.textContent = config.userName ? "✏️" : "✏️ Ajouter mon prénom";
+  editBtn.style.display = config.userName ? "none" : "";
+  editBtn.textContent = "✏️ Ajouter mon prénom";
   const [y,m,d] = viewKey.split("-").map(Number);
   const viewDate = new Date(y, m-1, d);
   document.getElementById("todayDate").textContent = DAY_NAMES[viewDate.getDay()] + " " + viewDate.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
@@ -1277,6 +1285,32 @@ document.getElementById("addNoteBtn").addEventListener("click", () => {
     saveConfig(config);
     renderNotesPage();
   }
+});
+
+/* ---------------- Render: Infos personnelles ---------------- */
+
+function renderProfilePage(){
+  document.getElementById("profileName").value = config.userName || "";
+  document.getElementById("profileAge").value = config.userAge || "";
+  document.getElementById("profileWeight").value = config.userWeight || "";
+  document.getElementById("profileHeight").value = config.userHeight || "";
+}
+document.getElementById("profileName").addEventListener("change", (e) => {
+  config.userName = e.target.value.trim();
+  saveConfig(config);
+  renderGreeting();
+});
+document.getElementById("profileAge").addEventListener("change", (e) => {
+  config.userAge = e.target.value ? Math.max(0, parseInt(e.target.value)||0) : "";
+  saveConfig(config);
+});
+document.getElementById("profileWeight").addEventListener("change", (e) => {
+  config.userWeight = e.target.value ? Math.max(0, parseFloat(e.target.value)||0) : "";
+  saveConfig(config);
+});
+document.getElementById("profileHeight").addEventListener("change", (e) => {
+  config.userHeight = e.target.value ? Math.max(0, parseInt(e.target.value)||0) : "";
+  saveConfig(config);
 });
 
 /* ---------------- Theme ---------------- */
