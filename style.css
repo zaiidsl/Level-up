@@ -347,8 +347,9 @@ a{color:var(--gold);}
 }
 .exercise-picker-head button:hover{color:var(--gold); border-color:var(--gold);}
 .exercise-picker-list{overflow-y:auto; padding:6px 8px;}
-.exercise-row{display:flex; align-items:center; gap:10px; padding:10px 8px; border-bottom:1px solid var(--border);}
-.exercise-row:last-child{border-bottom:none;}
+.exercise-row-wrap{border-bottom:1px solid var(--border);}
+.exercise-row-wrap:last-child{border-bottom:none;}
+.exercise-row{display:flex; align-items:center; gap:10px; padding:10px 8px;}
 .exercise-row-info{flex:1; cursor:pointer; padding:2px 0;}
 .exercise-row-name{font-size:13px; font-weight:600;}
 .exercise-row-muscle{font-size:11.5px; color:var(--muted); margin-top:1px;}
@@ -357,6 +358,12 @@ a{color:var(--gold);}
   width:32px; height:32px; flex-shrink:0; cursor:pointer; font-size:12px;
 }
 .exercise-video-btn:hover{border-color:var(--gold); background:rgba(232,168,96,0.12);}
+.exercise-video-panel{padding:0 8px 12px;}
+.exercise-video-panel iframe{
+  width:100%; aspect-ratio:16/9; border:none; border-radius:10px; background:#000; display:block;
+}
+.exercise-video-panel .day-empty{padding:14px 0;}
+.exercise-video-panel a{color:var(--gold); font-weight:600;}
 
 .roster-table{width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:14px; background:var(--card); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);}
 .roster-table th, .roster-table td{border-bottom:1px solid var(--border); padding:10px 12px; text-align:left;}

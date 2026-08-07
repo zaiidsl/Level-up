@@ -58,47 +58,47 @@ const DEFAULT_SPORT_EXTRAS = [
 ];
 
 const EXERCISE_LIBRARY = [
-  {id:"warmup", name:"Warm Up", muscle:"Full Body"},
-  {id:"squat", name:"Barbell Squat", muscle:"Quadriceps"},
-  {id:"front_squat", name:"Front Squat", muscle:"Quadriceps"},
-  {id:"deadlift", name:"Deadlift", muscle:"Hamstrings"},
-  {id:"romanian_deadlift", name:"Romanian Deadlift", muscle:"Hamstrings"},
-  {id:"bench_press", name:"Bench Press", muscle:"Chest"},
-  {id:"incline_bench_press", name:"Incline Bench Press", muscle:"Chest"},
-  {id:"push_up", name:"Push Up", muscle:"Chest"},
-  {id:"overhead_press", name:"Overhead Press", muscle:"Shoulders"},
-  {id:"lateral_raise", name:"Lateral Raise", muscle:"Shoulders"},
-  {id:"pull_up", name:"Pull Up", muscle:"Back"},
-  {id:"chin_up", name:"Chin Up", muscle:"Back"},
-  {id:"lat_pulldown", name:"Lat Pulldown", muscle:"Back"},
-  {id:"barbell_row", name:"Barbell Row", muscle:"Back"},
-  {id:"seated_cable_row", name:"Seated Cable Row", muscle:"Back"},
-  {id:"lunge", name:"Lunge", muscle:"Quadriceps"},
-  {id:"bulgarian_split_squat", name:"Bulgarian Split Squat", muscle:"Quadriceps"},
-  {id:"leg_press", name:"Leg Press", muscle:"Quadriceps"},
-  {id:"leg_curl", name:"Leg Curl", muscle:"Hamstrings"},
-  {id:"calf_raise", name:"Calf Raise", muscle:"Calves"},
-  {id:"bicep_curl", name:"Bicep Curl", muscle:"Biceps"},
-  {id:"hammer_curl", name:"Hammer Curl", muscle:"Biceps"},
-  {id:"tricep_dip", name:"Tricep Dip", muscle:"Triceps"},
-  {id:"tricep_pushdown", name:"Tricep Pushdown", muscle:"Triceps"},
-  {id:"plank", name:"Plank", muscle:"Core"},
-  {id:"side_plank", name:"Side Plank", muscle:"Core"},
-  {id:"russian_twist", name:"Russian Twist", muscle:"Core"},
-  {id:"hanging_leg_raise", name:"Hanging Leg Raise", muscle:"Core"},
-  {id:"glute_bridge", name:"Glute Bridge", muscle:"Glutes"},
-  {id:"hip_thrust", name:"Hip Thrust", muscle:"Glutes"},
-  {id:"burpee", name:"Burpee", muscle:"Full Body"},
-  {id:"mountain_climber", name:"Mountain Climber", muscle:"Full Body"},
-  {id:"jump_rope", name:"Jump Rope", muscle:"Cardio"},
-  {id:"box_jump", name:"Box Jump", muscle:"Legs"},
-  {id:"kettlebell_swing", name:"Kettlebell Swing", muscle:"Full Body"},
-  {id:"kettlebell_goblet_squat", name:"Kettlebell Goblet Squat", muscle:"Quadriceps"},
-  {id:"kettlebell_halo", name:"Kettlebell Halo", muscle:"Shoulders"},
-  {id:"gorilla_row_kettlebell", name:"Gorilla Row (Kettlebell)", muscle:"Upper Back"},
-  {id:"turkish_getup", name:"Turkish Get-Up", muscle:"Full Body"},
-  {id:"farmers_carry", name:"Farmer's Carry", muscle:"Full Body"},
-  {id:"renegade_row", name:"Renegade Row", muscle:"Back"},
+  {id:"warmup", name:"Warm Up", muscle:"Full Body", video:"f3zOrYCwquE"},
+  {id:"squat", name:"Barbell Squat", muscle:"Quadriceps", video:"kRX2NfqM90g"},
+  {id:"front_squat", name:"Front Squat", muscle:"Quadriceps", video:"v-mQm_droHg"},
+  {id:"deadlift", name:"Deadlift", muscle:"Hamstrings", video:"GxsLrTzyGUU"},
+  {id:"romanian_deadlift", name:"Romanian Deadlift", muscle:"Hamstrings", video:"2SHsk9AzdjA"},
+  {id:"bench_press", name:"Bench Press", muscle:"Chest", video:"gRVjAtPip0Y"},
+  {id:"incline_bench_press", name:"Incline Bench Press", muscle:"Chest", video:"kQtx01Qz6s8"},
+  {id:"push_up", name:"Push Up", muscle:"Chest", video:"BeC7ewqJsjI"},
+  {id:"overhead_press", name:"Overhead Press", muscle:"Shoulders", video:"F3QY5vMz_6I"},
+  {id:"lateral_raise", name:"Lateral Raise", muscle:"Shoulders", video:"b_LEX4n9lOs"},
+  {id:"pull_up", name:"Pull Up", muscle:"Back", video:"vw5Xmu5CIew"},
+  {id:"chin_up", name:"Chin Up", muscle:"Back", video:"brhRXlOhsAM"},
+  {id:"lat_pulldown", name:"Lat Pulldown", muscle:"Back", video:"SALxEARiMkw"},
+  {id:"barbell_row", name:"Barbell Row", muscle:"Back", video:"ML1L5ytxLMY"},
+  {id:"seated_cable_row", name:"Seated Cable Row", muscle:"Back", video:"xQNrFHEMhI4"},
+  {id:"lunge", name:"Lunge", muscle:"Quadriceps", video:"krXwDPKKiSM"},
+  {id:"bulgarian_split_squat", name:"Bulgarian Split Squat", muscle:"Quadriceps", video:"DeCnHqrN22U"},
+  {id:"leg_press", name:"Leg Press", muscle:"Quadriceps", video:"FciBR6C1knw"},
+  {id:"leg_curl", name:"Leg Curl", muscle:"Hamstrings", video:"hqI59xXChFk"},
+  {id:"calf_raise", name:"Calf Raise", muscle:"Calves", video:"ndQc4mz4mBU"},
+  {id:"bicep_curl", name:"Bicep Curl", muscle:"Biceps", video:"6DeLZ6cbgWQ"},
+  {id:"hammer_curl", name:"Hammer Curl", muscle:"Biceps", video:"BRVDS6HVR9Q"},
+  {id:"tricep_dip", name:"Tricep Dip", muscle:"Triceps", video:"AE4xaqTICTA"},
+  {id:"tricep_pushdown", name:"Tricep Pushdown", muscle:"Triceps", video:"qHDrQglWgS4"},
+  {id:"plank", name:"Plank", muscle:"Core", video:"mwlp75MS6Rg"},
+  {id:"side_plank", name:"Side Plank", muscle:"Core", video:"iNbH7_edNI8"},
+  {id:"russian_twist", name:"Russian Twist", muscle:"Core", video:"IJDOoVyVjhc"},
+  {id:"hanging_leg_raise", name:"Hanging Leg Raise", muscle:"Core", video:"rbOJSK07AGA"},
+  {id:"glute_bridge", name:"Glute Bridge", muscle:"Glutes", video:"nuapk_-Q2BI"},
+  {id:"hip_thrust", name:"Hip Thrust", muscle:"Glutes", video:"pF17m_CXfL0"},
+  {id:"burpee", name:"Burpee", muscle:"Full Body", video:"wGvBfVeCNko"},
+  {id:"mountain_climber", name:"Mountain Climber", muscle:"Full Body", video:"ixxk9Qfn61o"},
+  {id:"jump_rope", name:"Jump Rope", muscle:"Cardio", video:"kDOGb9C5kp0"},
+  {id:"box_jump", name:"Box Jump", muscle:"Legs", video:"G-bxQY57mKc"},
+  {id:"kettlebell_swing", name:"Kettlebell Swing", muscle:"Full Body", video:"pA6o-a3y1Vo"},
+  {id:"kettlebell_goblet_squat", name:"Kettlebell Goblet Squat", muscle:"Quadriceps", video:"IkcOjDnHwyI"},
+  {id:"kettlebell_halo", name:"Kettlebell Halo", muscle:"Shoulders", video:"lKANnpyd6VY"},
+  {id:"gorilla_row_kettlebell", name:"Gorilla Row (Kettlebell)", muscle:"Upper Back", video:"bLM3nLvoRdc"},
+  {id:"turkish_getup", name:"Turkish Get-Up", muscle:"Full Body", video:"sgd8n917Zv0"},
+  {id:"farmers_carry", name:"Farmer's Carry", muscle:"Full Body", video:"z7E_YU9P1jU"},
+  {id:"renegade_row", name:"Renegade Row", muscle:"Back", video:"F68p7cJFtOI"},
 ];
 const GYM_BY_WEEKDAY = {1:"push", 2:"pull", 3:"legs", 4:"kettlebell", 5:"push", 6:"legs", 0:"pull"};
 
@@ -1214,16 +1214,23 @@ document.getElementById("exerciseSearchInput").addEventListener("input", (e) => 
   renderExercisePickerList(e.target.value);
 });
 
+const exerciseVideoExpanded = {};
+let exercisePickerQuery = "";
+
 function renderExercisePickerList(query){
+  if(query !== undefined) exercisePickerQuery = query;
   const wrap = document.getElementById("exercisePickerList");
   wrap.innerHTML = "";
-  const q = query.trim().toLowerCase();
+  const q = exercisePickerQuery.trim().toLowerCase();
   const matches = EXERCISE_LIBRARY.filter(ex => !q || ex.name.toLowerCase().includes(q) || ex.muscle.toLowerCase().includes(q));
   if(!matches.length){
     wrap.innerHTML = `<p class="day-empty">Aucun exercice trouvé.</p>`;
     return;
   }
   matches.forEach(ex => {
+    const rowWrap = document.createElement("div");
+    rowWrap.className = "exercise-row-wrap";
+
     const row = document.createElement("div");
     row.className = "exercise-row";
     const info = document.createElement("div");
@@ -1242,15 +1249,29 @@ function renderExercisePickerList(query){
     const videoBtn = document.createElement("button");
     videoBtn.type = "button";
     videoBtn.className = "exercise-video-btn";
-    videoBtn.textContent = "▶";
+    videoBtn.textContent = exerciseVideoExpanded[ex.id] ? "✕" : "▶";
     videoBtn.title = "Voir une démo vidéo";
     videoBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      const q2 = encodeURIComponent(ex.name + " exercise tutorial");
-      window.open(`https://www.youtube.com/results?search_query=${q2}`, "_blank", "noopener");
+      exerciseVideoExpanded[ex.id] = !exerciseVideoExpanded[ex.id];
+      renderExercisePickerList();
     });
     row.append(info, videoBtn);
-    wrap.appendChild(row);
+    rowWrap.appendChild(row);
+
+    if(exerciseVideoExpanded[ex.id]){
+      const panel = document.createElement("div");
+      panel.className = "exercise-video-panel";
+      if(ex.video){
+        panel.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${ex.video}" title="Démo : ${ex.name}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+      }else{
+        const q2 = encodeURIComponent(ex.name + " exercise tutorial");
+        panel.innerHTML = `<p class="day-empty">Pas encore de vidéo vérifiée pour cet exercice.<br><a href="https://www.youtube.com/results?search_query=${q2}" target="_blank" rel="noopener">Chercher sur YouTube ›</a></p>`;
+      }
+      rowWrap.appendChild(panel);
+    }
+
+    wrap.appendChild(rowWrap);
   });
 }
 
