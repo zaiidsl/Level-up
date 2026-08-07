@@ -44,7 +44,10 @@ a{color:var(--gold);}
 .brand{
   width:38px; height:38px; border-radius:10px; background:var(--gold); color:#1a1200;
   display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; margin-bottom:22px;
+  border:none; padding:0; cursor:pointer; flex-shrink:0;
 }
+.brand:hover{filter:brightness(1.08);}
+.brand:active{transform:scale(0.94);}
 .nav{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:3px;}
 .nav button{
   width:100%; display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
@@ -58,12 +61,6 @@ a{color:var(--gold);}
 .sidebar-footer{margin-top:auto; display:flex; flex-direction:column; gap:14px;}
 .quote{font-size:12px; color:var(--sidebar-muted); font-style:italic; line-height:1.5; padding:0 4px;}
 .quote span{display:block; margin-top:4px; text-align:right;}
-.sidebar-actions{display:flex; gap:8px;}
-.sidebar-actions button{
-  flex:1; background:rgba(255,255,255,0.06); border:none; color:var(--sidebar-text);
-  border-radius:10px; padding:9px; cursor:pointer; font-size:14px;
-}
-.sidebar-actions button:hover{background:rgba(255,255,255,0.12);}
 
 /* ---------- Content ---------- */
 .content{flex:1; padding:24px 28px 60px; min-width:0;}

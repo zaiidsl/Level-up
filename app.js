@@ -1298,7 +1298,7 @@ function initTheme(){
 }
 function applyTheme(theme){
   document.body.classList.toggle("dark", theme === "dark");
-  document.getElementById("themeToggle").textContent = theme === "dark" ? "☀️" : "🌙";
+  document.getElementById("themeToggle").title = theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre";
 }
 
 /* ---------------- Init ---------------- */
