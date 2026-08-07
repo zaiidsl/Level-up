@@ -48,13 +48,57 @@ async function deletePdf(bookId){
 /* ---------------- Static content ---------------- */
 
 const DEFAULT_GYM_TYPES = [
-  {id:"push", label:"Push"},
-  {id:"pull", label:"Pull"},
-  {id:"legs", label:"Legs"},
-  {id:"kettlebell", label:"Kettlebell circuit"},
+  {id:"push", label:"Push", exercises:[]},
+  {id:"pull", label:"Pull", exercises:[]},
+  {id:"legs", label:"Legs", exercises:[]},
+  {id:"kettlebell", label:"Kettlebell circuit", exercises:[]},
 ];
 const DEFAULT_SPORT_EXTRAS = [
   {id:"mobilite", label:"Routine mobilité", onHome:true},
+];
+
+const EXERCISE_LIBRARY = [
+  {id:"warmup", name:"Warm Up", muscle:"Full Body"},
+  {id:"squat", name:"Barbell Squat", muscle:"Quadriceps"},
+  {id:"front_squat", name:"Front Squat", muscle:"Quadriceps"},
+  {id:"deadlift", name:"Deadlift", muscle:"Hamstrings"},
+  {id:"romanian_deadlift", name:"Romanian Deadlift", muscle:"Hamstrings"},
+  {id:"bench_press", name:"Bench Press", muscle:"Chest"},
+  {id:"incline_bench_press", name:"Incline Bench Press", muscle:"Chest"},
+  {id:"push_up", name:"Push Up", muscle:"Chest"},
+  {id:"overhead_press", name:"Overhead Press", muscle:"Shoulders"},
+  {id:"lateral_raise", name:"Lateral Raise", muscle:"Shoulders"},
+  {id:"pull_up", name:"Pull Up", muscle:"Back"},
+  {id:"chin_up", name:"Chin Up", muscle:"Back"},
+  {id:"lat_pulldown", name:"Lat Pulldown", muscle:"Back"},
+  {id:"barbell_row", name:"Barbell Row", muscle:"Back"},
+  {id:"seated_cable_row", name:"Seated Cable Row", muscle:"Back"},
+  {id:"lunge", name:"Lunge", muscle:"Quadriceps"},
+  {id:"bulgarian_split_squat", name:"Bulgarian Split Squat", muscle:"Quadriceps"},
+  {id:"leg_press", name:"Leg Press", muscle:"Quadriceps"},
+  {id:"leg_curl", name:"Leg Curl", muscle:"Hamstrings"},
+  {id:"calf_raise", name:"Calf Raise", muscle:"Calves"},
+  {id:"bicep_curl", name:"Bicep Curl", muscle:"Biceps"},
+  {id:"hammer_curl", name:"Hammer Curl", muscle:"Biceps"},
+  {id:"tricep_dip", name:"Tricep Dip", muscle:"Triceps"},
+  {id:"tricep_pushdown", name:"Tricep Pushdown", muscle:"Triceps"},
+  {id:"plank", name:"Plank", muscle:"Core"},
+  {id:"side_plank", name:"Side Plank", muscle:"Core"},
+  {id:"russian_twist", name:"Russian Twist", muscle:"Core"},
+  {id:"hanging_leg_raise", name:"Hanging Leg Raise", muscle:"Core"},
+  {id:"glute_bridge", name:"Glute Bridge", muscle:"Glutes"},
+  {id:"hip_thrust", name:"Hip Thrust", muscle:"Glutes"},
+  {id:"burpee", name:"Burpee", muscle:"Full Body"},
+  {id:"mountain_climber", name:"Mountain Climber", muscle:"Full Body"},
+  {id:"jump_rope", name:"Jump Rope", muscle:"Cardio"},
+  {id:"box_jump", name:"Box Jump", muscle:"Legs"},
+  {id:"kettlebell_swing", name:"Kettlebell Swing", muscle:"Full Body"},
+  {id:"kettlebell_goblet_squat", name:"Kettlebell Goblet Squat", muscle:"Quadriceps"},
+  {id:"kettlebell_halo", name:"Kettlebell Halo", muscle:"Shoulders"},
+  {id:"gorilla_row_kettlebell", name:"Gorilla Row (Kettlebell)", muscle:"Upper Back"},
+  {id:"turkish_getup", name:"Turkish Get-Up", muscle:"Full Body"},
+  {id:"farmers_carry", name:"Farmer's Carry", muscle:"Full Body"},
+  {id:"renegade_row", name:"Renegade Row", muscle:"Back"},
 ];
 const GYM_BY_WEEKDAY = {1:"push", 2:"pull", 3:"legs", 4:"kettlebell", 5:"push", 6:"legs", 0:"pull"};
 
@@ -143,6 +187,7 @@ function emptyDay(d = new Date()){
       cardioType:"marche", cardioDistance:0, cardioDuration:0, cardioDone:false,
       extras:{},
       gymType: defaultGymType(d.getDay()), gymDone:false,
+      gymLog:{},
     },
     cultureTopic: TOPIC_BY_WEEKDAY[d.getDay()],
     cultureDone:{},
@@ -195,12 +240,15 @@ if(config.userAge === undefined) config.userAge = "";
 if(config.userWeight === undefined) config.userWeight = "";
 if(config.userHeight === undefined) config.userHeight = "";
 if(!config.wirdTrackMode) config.wirdTrackMode = "hizb";
+if(!config.weightUnit) config.weightUnit = "kg";
+config.gymTypes.forEach(t => { if(!t.exercises) t.exercises = []; });
 function ensureDayShape(day){
   if(!day.sport) day.sport = emptyDay().sport;
   if(!day.sport.extras){
     day.sport.extras = day.sport.mobilityDone !== undefined ? {mobilite: day.sport.mobilityDone} : {};
     delete day.sport.mobilityDone;
   }
+  if(!day.sport.gymLog) day.sport.gymLog = {};
   if(!day.wird) day.wird = {fajr:false, dhuhr:false, asr:false, maghrib:false, isha:false, coranDone:false, coranValue:0};
   return day;
 }
@@ -988,14 +1036,35 @@ function renderExtrasManager(){
   wrap.appendChild(addBtn);
 }
 
+const gymRoutineExpanded = {};
+
+function routineLogFor(routineId){
+  if(!today.sport.gymLog[routineId]) today.sport.gymLog[routineId] = {};
+  return today.sport.gymLog[routineId];
+}
+
 function renderGymManager(){
   const wrap = document.getElementById("gymManager");
   if(!wrap) return;
   wrap.innerHTML = "";
   config.gymTypes.forEach(t => {
-    const row = document.createElement("div");
-    row.className = "manage-row";
-    row.innerHTML = `<span class="manage-label">${t.label}</span>`;
+    const expanded = !!gymRoutineExpanded[t.id];
+
+    const card = document.createElement("div");
+    card.className = "gym-routine-card";
+
+    const head = document.createElement("div");
+    head.className = "manage-row gym-routine-head";
+    const label = document.createElement("span");
+    label.className = "manage-label";
+    label.style.cursor = "pointer";
+    label.textContent = `${t.label}${t.exercises.length ? ` (${t.exercises.length} exo${t.exercises.length>1?"s":""})` : ""}`;
+    label.addEventListener("click", () => {
+      gymRoutineExpanded[t.id] = !gymRoutineExpanded[t.id];
+      renderGymManager();
+    });
+    head.appendChild(label);
+
     const editBtn = document.createElement("button");
     editBtn.type = "button"; editBtn.textContent = "✏️"; editBtn.title = "Renommer";
     editBtn.addEventListener("click", () => {
@@ -1013,20 +1082,176 @@ function renderGymManager(){
       }
       renderGymManager(); renderSportEverywhere();
     });
-    row.append(editBtn, delBtn);
-    wrap.appendChild(row);
+    const chevron = document.createElement("span");
+    chevron.className = "note-chevron";
+    chevron.style.cursor = "pointer";
+    chevron.textContent = expanded ? "▾" : "▸";
+    chevron.addEventListener("click", () => {
+      gymRoutineExpanded[t.id] = !gymRoutineExpanded[t.id];
+      renderGymManager();
+    });
+    head.append(editBtn, delBtn, chevron);
+    card.appendChild(head);
+
+    if(expanded){
+      const body = document.createElement("div");
+      body.className = "gym-routine-body";
+      const routineLog = routineLogFor(t.id);
+
+      if(!t.exercises.length){
+        body.innerHTML = `<p class="day-empty">Aucun exercice dans cette routine.</p>`;
+      }else{
+        t.exercises.forEach(exId => {
+          const ex = EXERCISE_LIBRARY.find(e => e.id === exId);
+          if(!ex) return;
+          if(!routineLog[exId]) routineLog[exId] = [];
+          const sets = routineLog[exId];
+
+          const exCard = document.createElement("div");
+          exCard.className = "exercise-log-card";
+          const exHead = document.createElement("div");
+          exHead.className = "exercise-log-head";
+          exHead.innerHTML = `<span class="exercise-log-name">${ex.name}</span>`;
+          const rmExBtn = document.createElement("button");
+          rmExBtn.type = "button"; rmExBtn.textContent = "✕"; rmExBtn.title = "Retirer de la routine";
+          rmExBtn.addEventListener("click", () => {
+            t.exercises = t.exercises.filter(id => id !== exId);
+            saveConfig(config);
+            renderGymManager();
+          });
+          exHead.appendChild(rmExBtn);
+          exCard.appendChild(exHead);
+
+          const setsWrap = document.createElement("div");
+          setsWrap.className = "exercise-log-sets";
+          sets.forEach((set, i) => {
+            const setRow = document.createElement("div");
+            setRow.className = "exercise-set-row";
+            setRow.innerHTML = `<span class="set-n">Série ${i+1}</span>`;
+            const repsInput = document.createElement("input");
+            repsInput.type = "number"; repsInput.min = "0"; repsInput.placeholder = "reps"; repsInput.value = set.reps || "";
+            repsInput.addEventListener("change", () => { set.reps = Math.max(0, parseInt(repsInput.value)||0); persist(); });
+            const weightInput = document.createElement("input");
+            weightInput.type = "number"; weightInput.min = "0"; weightInput.step = "0.5"; weightInput.placeholder = config.weightUnit; weightInput.value = set.weight || "";
+            weightInput.addEventListener("change", () => { set.weight = Math.max(0, parseFloat(weightInput.value)||0); persist(); });
+            const delSetBtn = document.createElement("button");
+            delSetBtn.type = "button"; delSetBtn.textContent = "✕"; delSetBtn.title = "Supprimer la série";
+            delSetBtn.addEventListener("click", () => {
+              sets.splice(i, 1);
+              persist();
+              renderGymManager();
+            });
+            setRow.append(repsInput, weightInput, delSetBtn);
+            setsWrap.appendChild(setRow);
+          });
+          exCard.appendChild(setsWrap);
+
+          const addSetBtn = document.createElement("button");
+          addSetBtn.type = "button"; addSetBtn.className = "add-btn"; addSetBtn.textContent = "+ Ajouter une série";
+          addSetBtn.addEventListener("click", () => {
+            sets.push({reps:0, weight:0});
+            persist();
+            renderGymManager();
+          });
+          exCard.appendChild(addSetBtn);
+
+          body.appendChild(exCard);
+        });
+      }
+
+      const addExBtn = document.createElement("button");
+      addExBtn.type = "button"; addExBtn.className = "add-btn"; addExBtn.textContent = "+ Ajouter un exercice";
+      addExBtn.addEventListener("click", () => openExercisePicker(t.id));
+      body.appendChild(addExBtn);
+
+      card.appendChild(body);
+    }
+
+    wrap.appendChild(card);
   });
   const addBtn = document.createElement("button");
   addBtn.type = "button"; addBtn.className = "add-btn"; addBtn.textContent = "+ Ajouter une routine";
   addBtn.addEventListener("click", () => {
     const v = prompt("Nom de la nouvelle routine de gym :");
     if(v && v.trim()){
-      config.gymTypes.push({id:"gym_"+Date.now(), label:v.trim()});
+      config.gymTypes.push({id:"gym_"+Date.now(), label:v.trim(), exercises:[]});
       saveConfig(config);
       renderGymManager(); renderSportEverywhere();
     }
   });
   wrap.appendChild(addBtn);
+
+  const unitSel = document.getElementById("weightUnitSelect");
+  if(unitSel && unitSel.dataset.wired !== "1"){
+    unitSel.dataset.wired = "1";
+    unitSel.value = config.weightUnit;
+    unitSel.addEventListener("change", () => {
+      config.weightUnit = unitSel.value;
+      saveConfig(config);
+      renderGymManager();
+    });
+  }
+  if(unitSel) unitSel.value = config.weightUnit;
+}
+
+let exercisePickerTargetRoutineId = null;
+function openExercisePicker(routineId){
+  exercisePickerTargetRoutineId = routineId;
+  document.getElementById("exerciseSearchInput").value = "";
+  renderExercisePickerList("");
+  document.getElementById("exercisePickerOverlay").classList.add("open");
+  document.getElementById("exerciseSearchInput").focus();
+}
+function closeExercisePicker(){
+  document.getElementById("exercisePickerOverlay").classList.remove("open");
+  exercisePickerTargetRoutineId = null;
+}
+document.getElementById("exercisePickerClose").addEventListener("click", closeExercisePicker);
+document.getElementById("exercisePickerOverlay").addEventListener("click", (e) => {
+  if(e.target.id === "exercisePickerOverlay") closeExercisePicker();
+});
+document.getElementById("exerciseSearchInput").addEventListener("input", (e) => {
+  renderExercisePickerList(e.target.value);
+});
+
+function renderExercisePickerList(query){
+  const wrap = document.getElementById("exercisePickerList");
+  wrap.innerHTML = "";
+  const q = query.trim().toLowerCase();
+  const matches = EXERCISE_LIBRARY.filter(ex => !q || ex.name.toLowerCase().includes(q) || ex.muscle.toLowerCase().includes(q));
+  if(!matches.length){
+    wrap.innerHTML = `<p class="day-empty">Aucun exercice trouvé.</p>`;
+    return;
+  }
+  matches.forEach(ex => {
+    const row = document.createElement("div");
+    row.className = "exercise-row";
+    const info = document.createElement("div");
+    info.className = "exercise-row-info";
+    info.innerHTML = `<div class="exercise-row-name">${ex.name}</div><div class="exercise-row-muscle">${ex.muscle}</div>`;
+    info.addEventListener("click", () => {
+      const routine = config.gymTypes.find(t => t.id === exercisePickerTargetRoutineId);
+      if(!routine) return;
+      if(!routine.exercises.includes(ex.id)){
+        routine.exercises.push(ex.id);
+        saveConfig(config);
+      }
+      closeExercisePicker();
+      renderGymManager();
+    });
+    const videoBtn = document.createElement("button");
+    videoBtn.type = "button";
+    videoBtn.className = "exercise-video-btn";
+    videoBtn.textContent = "▶";
+    videoBtn.title = "Voir une démo vidéo";
+    videoBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const q2 = encodeURIComponent(ex.name + " exercise tutorial");
+      window.open(`https://www.youtube.com/results?search_query=${q2}`, "_blank", "noopener");
+    });
+    row.append(info, videoBtn);
+    wrap.appendChild(row);
+  });
 }
 
 /* ---------------- Render: Culture page ---------------- */

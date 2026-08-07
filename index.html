@@ -159,10 +159,40 @@
       </div>
 
       <div class="routine-block">
-        <h3>Types de séance gym</h3>
+        <div class="routine-block-head">
+          <h3>Types de séance gym</h3>
+          <div class="unit-switch">
+            <span class="manage-label" style="flex:0 0 auto;">Unité</span>
+            <select id="weightUnitSelect">
+              <option value="kg">kg</option>
+              <option value="lb">lb</option>
+            </select>
+          </div>
+        </div>
+        <p class="page-hint" style="margin:-4px 0 10px;">Clique une routine pour lui ajouter des exercices (séries, reps, poids).</p>
         <div id="gymManager" class="manage-list"></div>
       </div>
     </section>
+
+    <div class="exercise-picker-overlay" id="exercisePickerOverlay">
+      <div class="exercise-picker-modal">
+        <div class="exercise-picker-head">
+          <input type="text" id="exerciseSearchInput" placeholder="Chercher un exercice…">
+          <button id="exercisePickerClose" type="button">✕</button>
+        </div>
+        <div class="exercise-picker-list" id="exercisePickerList"></div>
+      </div>
+    </div>
+
+    <div class="exercise-picker-overlay" id="exercisePickerOverlay">
+      <div class="exercise-picker-modal">
+        <div class="exercise-picker-head">
+          <input type="text" id="exerciseSearchInput" placeholder="Chercher un exercice…">
+          <button id="exercisePickerClose" type="button">✕</button>
+        </div>
+        <div class="exercise-picker-list" id="exercisePickerList"></div>
+      </div>
+    </div>
 
     <!-- ================= CULTURE ================= -->
     <section class="page" data-page="culture">
