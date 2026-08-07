@@ -1,14 +1,70 @@
-const USER_NAME = "Zaiid";
 const DAY_NAMES = ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
 
 const HISTORY_KEY = "zdash:history";
 const CONFIG_KEY = "zdash:config";
 const THEME_KEY = "zdash:theme";
 
+/* ---------------- PDF storage (IndexedDB) ---------------- */
+
+const PDF_DB_NAME = "zdash-pdfs";
+const PDF_STORE = "pdfs";
+
+function openPdfDb(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(PDF_DB_NAME, 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore(PDF_STORE); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function savePdf(bookId, file){
+  const db = await openPdfDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PDF_STORE, "readwrite");
+    tx.objectStore(PDF_STORE).put(file, bookId);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function getPdf(bookId){
+  const db = await openPdfDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PDF_STORE, "readonly");
+    const req = tx.objectStore(PDF_STORE).get(bookId);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function deletePdf(bookId){
+  const db = await openPdfDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PDF_STORE, "readwrite");
+    tx.objectStore(PDF_STORE).delete(bookId);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 /* ---------------- Static content ---------------- */
 
-const GYM_TYPES = { push:"Push", pull:"Pull", legs:"Legs", kettlebell:"Kettlebell circuit" };
+const DEFAULT_GYM_TYPES = [
+  {id:"push", label:"Push"},
+  {id:"pull", label:"Pull"},
+  {id:"legs", label:"Legs"},
+  {id:"kettlebell", label:"Kettlebell circuit"},
+];
+const DEFAULT_SPORT_EXTRAS = [
+  {id:"mobilite", label:"Routine mobilité", onHome:true},
+];
 const GYM_BY_WEEKDAY = {1:"push", 2:"pull", 3:"legs", 4:"kettlebell", 5:"push", 6:"legs", 0:"pull"};
+
+const PRAYERS = [
+  {id:"fajr", label:"Fajr"},
+  {id:"dhuhr", label:"Dhuhr"},
+  {id:"asr", label:"Asr"},
+  {id:"maghrib", label:"Maghrib"},
+  {id:"isha", label:"Isha"},
+];
 
 const CULTURE_TOPICS = {
   economie: { label:"Économie", rank:"01", day:"Lun · Mer",
@@ -81,18 +137,18 @@ function saveHistory(h){
   catch(e){ console.error("Erreur de sauvegarde", e); }
 }
 
-function emptyDay(){
-  const d = new Date();
+function emptyDay(d = new Date()){
   return {
     sport:{
       cardioType:"marche", cardioDistance:0, cardioDuration:0, cardioDone:false,
-      mobilityDone:false,
-      gymType: GYM_BY_WEEKDAY[d.getDay()], gymDone:false,
+      extras:{},
+      gymType: defaultGymType(d.getDay()), gymDone:false,
     },
     cultureTopic: TOPIC_BY_WEEKDAY[d.getDay()],
     cultureDone:{},
     lecturePages:0,
     lectureDone:{},
+    wird:{fajr:false, dhuhr:false, asr:false, maghrib:false, isha:false, coranDone:false, coranValue:0},
     freeTasks:[],
   };
 }
@@ -108,7 +164,17 @@ function loadConfig(){
     notes:[],
     weeklyGoal:"Comprendre l'inflation et ses impacts",
     cultureNotes:[],
+    gymTypes: DEFAULT_GYM_TYPES.map(t => ({...t})),
+    sportExtras: DEFAULT_SPORT_EXTRAS.map(t => ({...t})),
+    sportOnHome: {cardio:true, gym:true},
+    userName:"",
+    wirdTrackMode:"hizb",
   };
+}
+function defaultGymType(weekday){
+  const preferred = GYM_BY_WEEKDAY[weekday];
+  if(config.gymTypes && config.gymTypes.some(t => t.id === preferred)) return preferred;
+  return (config.gymTypes && config.gymTypes[0]) ? config.gymTypes[0].id : "";
 }
 function saveConfig(c){
   try{ localStorage.setItem(CONFIG_KEY, JSON.stringify(c)); }
@@ -117,16 +183,42 @@ function saveConfig(c){
 
 let history = loadHistory();
 let config = loadConfig();
+if(!config.gymTypes) config.gymTypes = DEFAULT_GYM_TYPES.map(t => ({...t}));
+if(!config.sportExtras) config.sportExtras = DEFAULT_SPORT_EXTRAS.map(t => ({...t}));
+config.sportExtras.forEach(e => { if(e.onHome === undefined) e.onHome = true; });
+if(!config.sportOnHome) config.sportOnHome = {cardio:true, gym:true};
+if(config.userName === undefined) config.userName = "";
+if(!config.wirdTrackMode) config.wirdTrackMode = "hizb";
+function ensureDayShape(day){
+  if(!day.sport) day.sport = emptyDay().sport;
+  if(!day.sport.extras){
+    day.sport.extras = day.sport.mobilityDone !== undefined ? {mobilite: day.sport.mobilityDone} : {};
+    delete day.sport.mobilityDone;
+  }
+  if(!day.wird) day.wird = {fajr:false, dhuhr:false, asr:false, maghrib:false, isha:false, coranDone:false, coranValue:0};
+  return day;
+}
+
 const KEY = todayKey();
 if(!history[KEY]) history[KEY] = emptyDay();
-let today = history[KEY];
-if(!today.sport) today.sport = emptyDay().sport;
+let viewKey = KEY;
+let today = ensureDayShape(history[KEY]);
 config.books.forEach(b => { if(!b.notes) b.notes = []; });
 if(!config.cultureNotes) config.cultureNotes = [];
 
 function persist(){
-  history[KEY] = today;
+  history[viewKey] = today;
   saveHistory(history);
+}
+
+function switchViewDay(key){
+  if(!history[key]){
+    const [y,m,d] = key.split("-").map(Number);
+    history[key] = emptyDay(new Date(y, m-1, d));
+  }
+  viewKey = key;
+  today = ensureDayShape(history[key]);
+  goto("today");
 }
 
 let calMonth = new Date().getMonth();
@@ -140,9 +232,11 @@ const cultureExpanded = {};
 function goto(page){
   document.querySelectorAll(".page").forEach(p => p.classList.toggle("active", p.dataset.page === page));
   document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.dataset.page === page));
+  if(page === "today") renderToday();
   if(page === "sport") renderSportPage();
   if(page === "culture") renderCulturePage();
   if(page === "lecture") renderLecturePage();
+  if(page === "wird") renderWirdPage();
   if(page === "stats") renderStatsPage();
   if(page === "notes") renderNotesPage();
 }
@@ -172,9 +266,16 @@ function checkItem(task, done, onToggle){
   return row;
 }
 
+function sportExtrasOf(sportRec){
+  if(!sportRec) return {};
+  if(sportRec.extras) return sportRec.extras;
+  if(sportRec.mobilityDone !== undefined) return {mobilite: sportRec.mobilityDone};
+  return {};
+}
+
 function dayHasCategory(rec, cat){
   if(!rec) return false;
-  if(cat === "sport") return !!(rec.sport && (rec.sport.cardioDone || rec.sport.mobilityDone || rec.sport.gymDone));
+  if(cat === "sport") return !!(rec.sport && (rec.sport.cardioDone || rec.sport.gymDone || Object.values(sportExtrasOf(rec.sport)).some(Boolean)));
   if(cat === "culture") return Object.values(rec.cultureDone||{}).some(Boolean);
   if(cat === "lecture") return Object.values(rec.lectureDone||{}).some(Boolean) || (rec.lecturePages||0) > 0;
   return false;
@@ -197,119 +298,280 @@ function last7Dates(){
 /* ---------------- Render: Today ---------------- */
 
 function renderGreeting(){
-  document.getElementById("greeting").textContent = `Bonjour ${USER_NAME} 👋`;
-  const d = new Date();
-  document.getElementById("todayDate").textContent = DAY_NAMES[d.getDay()] + " " + d.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+  document.getElementById("greeting").textContent = config.userName ? `Bonjour ${config.userName} 👋` : "Bonjour 👋";
+  const editBtn = document.getElementById("editNameBtn");
+  editBtn.textContent = config.userName ? "✏️" : "✏️ Ajouter mon prénom";
+  const [y,m,d] = viewKey.split("-").map(Number);
+  const viewDate = new Date(y, m-1, d);
+  document.getElementById("todayDate").textContent = DAY_NAMES[viewDate.getDay()] + " " + viewDate.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+
+  const banner = document.getElementById("viewingBanner");
+  if(viewKey !== KEY){
+    banner.style.display = "flex";
+    banner.querySelector(".viewing-text").textContent = `Tu modifies l'historique du ${viewDate.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}`;
+  }else{
+    banner.style.display = "none";
+  }
 }
+document.getElementById("editNameBtn").addEventListener("click", () => {
+  const v = prompt("Ton prénom :", config.userName || "");
+  if(v !== null){
+    config.userName = v.trim();
+    saveConfig(config);
+    renderGreeting();
+  }
+});
+document.getElementById("backToTodayBtn").addEventListener("click", () => switchViewDay(KEY));
 
 function populateSelect(sel, options, value){
   sel.innerHTML = options.map(o => `<option value="${o.id}">${o.label}</option>`).join("");
   sel.value = value;
 }
 
-function renderSportInto(container){
+function renderSportChecklist(container){
   container.innerHTML = "";
   const s = today.sport;
+  if(!s.extras) s.extras = {};
+  const onHomeExtras = config.sportExtras.filter(e => e.onHome);
+  let any = false;
 
-  const cardioWrap = document.createElement("div");
-  cardioWrap.className = "sport-item" + (s.cardioDone ? " done" : "");
-  const cardioLabel = document.createElement("label");
-  cardioLabel.className = "check-item" + (s.cardioDone ? " done" : "");
-  cardioLabel.innerHTML = `<input type="checkbox" ${s.cardioDone?"checked":""}><span class="txt"><span class="t">Marche / Footing matinal</span></span>`;
-  cardioLabel.querySelector("input").addEventListener("change", (e) => {
-    s.cardioDone = e.target.checked; persist(); renderSportEverywhere();
+  if(config.sportOnHome.cardio){
+    any = true;
+    const cardioWrap = document.createElement("div");
+    cardioWrap.className = "sport-item" + (s.cardioDone ? " done" : "");
+    const cardioLabel = document.createElement("label");
+    cardioLabel.className = "check-item" + (s.cardioDone ? " done" : "");
+    cardioLabel.innerHTML = `<input type="checkbox" ${s.cardioDone?"checked":""}><span class="txt"><span class="t">Marche / Footing matinal</span></span>`;
+    cardioLabel.querySelector("input").addEventListener("change", (e) => {
+      s.cardioDone = e.target.checked; persist(); renderSportEverywhere();
+    });
+    cardioWrap.appendChild(cardioLabel);
+
+    const cardioDetail = document.createElement("div");
+    cardioDetail.className = "sport-item-detail";
+    const typeSel = document.createElement("select");
+    typeSel.innerHTML = `<option value="marche">Marche</option><option value="footing">Footing</option>`;
+    typeSel.value = s.cardioType;
+    typeSel.addEventListener("change", (e) => { s.cardioType = e.target.value; persist(); });
+    const distInput = document.createElement("input");
+    distInput.type = "number"; distInput.min = "0"; distInput.step = "0.1"; distInput.value = s.cardioDistance;
+    distInput.addEventListener("change", (e) => { s.cardioDistance = Math.max(0, parseFloat(e.target.value)||0); persist(); });
+    const durInput = document.createElement("input");
+    durInput.type = "number"; durInput.min = "0"; durInput.value = s.cardioDuration;
+    durInput.addEventListener("change", (e) => { s.cardioDuration = Math.max(0, parseInt(e.target.value)||0); persist(); });
+    cardioDetail.append(typeSel, distInput, document.createTextNode(" km"), durInput, document.createTextNode(" min"));
+    cardioWrap.appendChild(cardioDetail);
+    container.appendChild(cardioWrap);
+  }
+
+  onHomeExtras.forEach(extra => {
+    any = true;
+    const doneVal = !!s.extras[extra.id];
+    const wrap = document.createElement("div");
+    wrap.className = "sport-item" + (doneVal ? " done" : "");
+    const label = document.createElement("label");
+    label.className = "check-item" + (doneVal ? " done" : "");
+    label.innerHTML = `<input type="checkbox" ${doneVal?"checked":""}><span class="txt"><span class="t">${extra.label}</span></span>`;
+    label.querySelector("input").addEventListener("change", (e) => {
+      s.extras[extra.id] = e.target.checked; persist(); renderSportEverywhere();
+    });
+    wrap.appendChild(label);
+    container.appendChild(wrap);
   });
-  cardioWrap.appendChild(cardioLabel);
 
-  const cardioDetail = document.createElement("div");
-  cardioDetail.className = "sport-item-detail";
-  const typeSel = document.createElement("select");
-  typeSel.innerHTML = `<option value="marche">Marche</option><option value="footing">Footing</option>`;
-  typeSel.value = s.cardioType;
-  typeSel.addEventListener("change", (e) => { s.cardioType = e.target.value; persist(); });
-  const distInput = document.createElement("input");
-  distInput.type = "number"; distInput.min = "0"; distInput.step = "0.1"; distInput.value = s.cardioDistance;
-  distInput.addEventListener("change", (e) => { s.cardioDistance = Math.max(0, parseFloat(e.target.value)||0); persist(); });
-  const durInput = document.createElement("input");
-  durInput.type = "number"; durInput.min = "0"; durInput.value = s.cardioDuration;
-  durInput.addEventListener("change", (e) => { s.cardioDuration = Math.max(0, parseInt(e.target.value)||0); persist(); });
-  cardioDetail.append(typeSel, distInput, document.createTextNode(" km"), durInput, document.createTextNode(" min"));
-  cardioWrap.appendChild(cardioDetail);
-  container.appendChild(cardioWrap);
+  if(config.sportOnHome.gym){
+    any = true;
+    const gymWrap = document.createElement("div");
+    gymWrap.className = "sport-item" + (s.gymDone ? " done" : "");
+    const gymLabel = document.createElement("label");
+    gymLabel.className = "check-item" + (s.gymDone ? " done" : "");
+    gymLabel.innerHTML = `<input type="checkbox" ${s.gymDone?"checked":""}><span class="txt"><span class="t">Séance gym</span></span>`;
+    gymLabel.querySelector("input").addEventListener("change", (e) => {
+      s.gymDone = e.target.checked; persist(); renderSportEverywhere();
+    });
+    gymWrap.appendChild(gymLabel);
 
-  const mobWrap = document.createElement("div");
-  mobWrap.className = "sport-item" + (s.mobilityDone ? " done" : "");
-  const mobLabel = document.createElement("label");
-  mobLabel.className = "check-item" + (s.mobilityDone ? " done" : "");
-  mobLabel.innerHTML = `<input type="checkbox" ${s.mobilityDone?"checked":""}><span class="txt"><span class="t">Routine mobilité</span></span>`;
-  mobLabel.querySelector("input").addEventListener("change", (e) => {
-    s.mobilityDone = e.target.checked; persist(); renderSportEverywhere();
-  });
-  mobWrap.appendChild(mobLabel);
-  container.appendChild(mobWrap);
+    const gymDetail = document.createElement("div");
+    gymDetail.className = "sport-item-detail";
+    const gymSel = document.createElement("select");
+    gymSel.innerHTML = config.gymTypes.map(t => `<option value="${t.id}">${t.label}</option>`).join("");
+    gymSel.value = s.gymType;
+    gymSel.addEventListener("change", (e) => { s.gymType = e.target.value; persist(); });
+    gymDetail.appendChild(gymSel);
+    gymWrap.appendChild(gymDetail);
+    container.appendChild(gymWrap);
+  }
 
-  const gymWrap = document.createElement("div");
-  gymWrap.className = "sport-item" + (s.gymDone ? " done" : "");
-  const gymLabel = document.createElement("label");
-  gymLabel.className = "check-item" + (s.gymDone ? " done" : "");
-  gymLabel.innerHTML = `<input type="checkbox" ${s.gymDone?"checked":""}><span class="txt"><span class="t">Séance gym</span></span>`;
-  gymLabel.querySelector("input").addEventListener("change", (e) => {
-    s.gymDone = e.target.checked; persist(); renderSportEverywhere();
-  });
-  gymWrap.appendChild(gymLabel);
+  if(!any){
+    container.innerHTML = `<p class="day-empty">Aucune routine ajoutée à l'accueil. Va dans <b>Sport</b> pour en ajouter.</p>`;
+  }
+}
 
-  const gymDetail = document.createElement("div");
-  gymDetail.className = "sport-item-detail";
-  const gymSel = document.createElement("select");
-  gymSel.innerHTML = Object.keys(GYM_TYPES).map(id => `<option value="${id}">${GYM_TYPES[id]}</option>`).join("");
-  gymSel.value = s.gymType;
-  gymSel.addEventListener("change", (e) => { s.gymType = e.target.value; persist(); });
-  gymDetail.appendChild(gymSel);
-  gymWrap.appendChild(gymDetail);
-  container.appendChild(gymWrap);
+function sportCounts(){
+  const s = today.sport;
+  const onHomeExtras = config.sportExtras.filter(e => e.onHome);
+  const total = (config.sportOnHome.cardio?1:0) + (config.sportOnHome.gym?1:0) + onHomeExtras.length;
+  const done = [
+    config.sportOnHome.cardio && s.cardioDone,
+    config.sportOnHome.gym && s.gymDone,
+    ...onHomeExtras.map(e => s.extras && s.extras[e.id]),
+  ].filter(Boolean).length;
+  return {done, total};
 }
 
 function renderSportProgress(){
-  const s = today.sport;
-  const done = [s.cardioDone, s.mobilityDone, s.gymDone].filter(Boolean).length;
+  const {done, total} = sportCounts();
   const bar = document.getElementById("sportProgBar");
   const txt = document.getElementById("sportProgTxt");
-  if(bar) bar.style.width = (done >= 1 ? 100 : 0)+"%";
-  if(txt) txt.textContent = done >= 1 ? `Objectif atteint ✓${done > 1 ? ` (+${done-1} bonus)` : ""}` : "Objectif : 1 case sur 3";
+  const caption = document.getElementById("sportObjectiveCaption");
+  if(total === 0){
+    if(caption) caption.textContent = "Va dans Sport pour ajouter des routines à l'accueil";
+    if(bar) bar.style.width = "0%";
+    if(txt) txt.textContent = "Aucune routine";
+    return;
+  }
+  if(caption) caption.textContent = `Objectif : ${total} case${total>1?"s":""} à cocher`;
+  if(bar) bar.style.width = Math.round(done/total*100)+"%";
+  if(txt) txt.textContent = `${done}/${total}`;
 }
 
 function renderSportEverywhere(){
   const cardContainer = document.getElementById("sportChecklist");
-  if(cardContainer) renderSportInto(cardContainer);
-  const pageContainer = document.getElementById("sportPageBody");
-  if(pageContainer) renderSportInto(pageContainer);
+  if(cardContainer) renderSportChecklist(cardContainer);
   renderSportProgress();
   renderProgress();
   renderPills();
 }
 
+function renderPrayerRow(container){
+  container.innerHTML = "";
+  PRAYERS.forEach(p => {
+    const done = !!today.wird[p.id];
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "prayer-pill" + (done ? " done" : "");
+    btn.textContent = p.label;
+    btn.addEventListener("click", () => {
+      today.wird[p.id] = !today.wird[p.id];
+      persist();
+      renderWirdEverywhere();
+    });
+    container.appendChild(btn);
+  });
+}
+
+function renderCoranItem(container){
+  container.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "sport-item" + (today.wird.coranDone ? " done" : "");
+  const label = document.createElement("label");
+  label.className = "check-item" + (today.wird.coranDone ? " done" : "");
+  label.innerHTML = `<input type="checkbox" ${today.wird.coranDone?"checked":""}><span class="txt"><span class="t">Wird Yawmi — Lecture du Coran</span></span>`;
+  label.querySelector("input").addEventListener("change", (e) => {
+    today.wird.coranDone = e.target.checked; persist(); renderWirdEverywhere();
+  });
+  wrap.appendChild(label);
+
+  const detail = document.createElement("div");
+  detail.className = "sport-item-detail";
+  const input = document.createElement("input");
+  input.type = "number"; input.min = "0";
+  input.value = today.wird.coranValue || 0;
+  input.addEventListener("change", () => {
+    today.wird.coranValue = Math.max(0, parseInt(input.value)||0); persist();
+  });
+  const unitLabel = document.createTextNode(config.wirdTrackMode === "hizb" ? " Hizb" : " page");
+  detail.append(input, unitLabel);
+  wrap.appendChild(detail);
+  container.appendChild(wrap);
+}
+
+function wirdDoneCount(){
+  return PRAYERS.filter(p => today.wird[p.id]).length + (today.wird.coranDone ? 1 : 0);
+}
+
+function wirdCounts(){
+  return {done: wirdDoneCount(), total: PRAYERS.length + 1};
+}
+
+function renderWirdProgress(){
+  const {done, total} = wirdCounts();
+  const bar = document.getElementById("wirdProgBar");
+  const txt = document.getElementById("wirdProgTxt");
+  const caption = document.getElementById("wirdObjectiveCaption");
+  if(caption) caption.textContent = `Objectif : ${total} cases à cocher`;
+  if(bar) bar.style.width = Math.round(done/total*100)+"%";
+  if(txt) txt.textContent = `${done}/${total}`;
+}
+
+function renderWirdEverywhere(){
+  const prayerRow = document.getElementById("prayerRow");
+  if(prayerRow) renderPrayerRow(prayerRow);
+  const coranChecklist = document.getElementById("coranChecklist");
+  if(coranChecklist) renderCoranItem(coranChecklist);
+  const prayerPageBody = document.getElementById("prayerPageBody");
+  if(prayerPageBody) renderPrayerRow(prayerPageBody);
+  const coranPageBody = document.getElementById("coranPageBody");
+  if(coranPageBody) renderCoranItem(coranPageBody);
+  renderWirdProgress();
+  renderProgress();
+  renderPills();
+}
+
+function renderWirdPage(){
+  renderWirdEverywhere();
+  const modeSel = document.getElementById("wirdModeSelect");
+  modeSel.value = config.wirdTrackMode;
+  modeSel.onchange = () => {
+    config.wirdTrackMode = modeSel.value;
+    saveConfig(config);
+    renderWirdEverywhere();
+  };
+}
+
 function buildCultureItem(task, kind){
   const topicId = today.cultureTopic;
-  const notes = config.cultureNotes || [];
-  const todayCount = notes.filter(n => n.topicId===topicId && n.taskId===task.id && n.date===todayKey()).length;
+  if(!config.cultureNotes) config.cultureNotes = [];
+  const existingNote = config.cultureNotes.find(n => n.topicId===topicId && n.taskId===task.id && n.date===todayKey());
   const doneToday = !!today.cultureDone[task.id];
   const expanded = cultureExpanded[task.id];
 
   const wrap = document.createElement("div");
   wrap.className = "sport-item" + (doneToday ? " done" : "");
 
-  const header = document.createElement("button");
-  header.type = "button";
+  const header = document.createElement("div");
   header.className = "check-item note-item-head" + (doneToday ? " done" : "");
-  header.innerHTML = `
-    <span class="note-check">${doneToday ? "✅" : "☐"}</span>
-    <span class="txt"><span class="t">${task.label}</span>${todayCount ? `<span class="s">${todayCount} ${kind==="title"?"titre":"note"}${todayCount>1?"s":""} aujourd'hui</span>` : (task.sub ? `<span class="s">${task.sub}</span>` : "")}</span>
-    <span class="note-chevron">${expanded ? "▾" : "▸"}</span>
-  `;
-  header.addEventListener("click", () => {
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = doneToday;
+  checkbox.addEventListener("change", (e) => {
+    today.cultureDone[task.id] = e.target.checked;
+    persist();
+    renderCultureCard();
+    renderProgress();
+    renderPills();
+  });
+
+  const labelArea = document.createElement("div");
+  labelArea.className = "txt";
+  labelArea.style.cursor = "pointer";
+  labelArea.innerHTML = `<span class="t">${task.label}</span>${existingNote ? `<span class="s">Enregistré aujourd'hui — clique pour modifier</span>` : (task.sub ? `<span class="s">${task.sub}</span>` : "")}`;
+  labelArea.addEventListener("click", () => {
     cultureExpanded[task.id] = !cultureExpanded[task.id];
     renderCultureCard();
   });
+
+  const chevron = document.createElement("span");
+  chevron.className = "note-chevron";
+  chevron.style.cursor = "pointer";
+  chevron.textContent = expanded ? "▾" : "▸";
+  chevron.addEventListener("click", () => {
+    cultureExpanded[task.id] = !cultureExpanded[task.id];
+    renderCultureCard();
+  });
+
+  header.append(checkbox, labelArea, chevron);
   wrap.appendChild(header);
 
   if(expanded){
@@ -323,6 +585,7 @@ function buildCultureItem(task, kind){
       input.rows = 3;
       input.placeholder = kind === "resume" ? "Écris ton résumé…" : "Écris ta note…";
     }
+    if(existingNote) input.value = existingNote.text;
     const saveBtn = document.createElement("button");
     saveBtn.type = "button";
     saveBtn.textContent = "Enregistrer";
@@ -330,8 +593,11 @@ function buildCultureItem(task, kind){
     saveBtn.addEventListener("click", () => {
       const text = input.value.trim();
       if(!text) return;
-      if(!config.cultureNotes) config.cultureNotes = [];
-      config.cultureNotes.unshift({id:"cnote_"+Date.now(), topicId, taskId:task.id, kind, text, date:todayKey()});
+      if(existingNote){
+        existingNote.text = text;
+      }else{
+        config.cultureNotes.unshift({id:"cnote_"+Date.now(), topicId, taskId:task.id, kind, text, date:todayKey()});
+      }
       saveConfig(config);
       today.cultureDone[task.id] = true;
       persist();
@@ -372,10 +638,17 @@ function renderCultureCard(){
       }));
     }
   });
+  const {done, total} = cultureCounts();
+  document.getElementById("cultureObjectiveCaption").textContent = `Objectif : ${total} tâche${total>1?"s":""} à compléter`;
+  document.getElementById("cultureProgTxt").textContent = `${done}/${total}`;
+  document.getElementById("cultureProgBar").style.width = Math.round(done/total*100)+"%";
+}
+
+function cultureCounts(){
+  const topic = CULTURE_TOPICS[today.cultureTopic];
+  const total = topic.tasks.length;
   const done = topic.tasks.filter(t => today.cultureDone[t.id]).length;
-  document.getElementById("cultureObjectiveCaption").textContent = `Objectif : 1 tâche sur ${topic.tasks.length} (le reste, c'est du bonus)`;
-  document.getElementById("cultureProgTxt").textContent = done >= 1 ? `Objectif atteint ✓${done > 1 ? ` (+${done-1} bonus)` : ""}` : "Objectif : 1 tâche";
-  document.getElementById("cultureProgBar").style.width = (done >= 1 ? 100 : 0)+"%";
+  return {done, total};
 }
 
 function currentBook(){
@@ -384,25 +657,46 @@ function currentBook(){
 
 function buildNoteItem(type, label){
   const book = currentBook();
-  const todayCount = (book && book.notes) ? book.notes.filter(n => n.type===type && n.date===todayKey()).length : 0;
+  const existingNote = (book && book.notes) ? book.notes.find(n => n.type===type && n.date===todayKey()) : null;
   const doneToday = !!today.lectureDone[type];
   const expanded = lectureExpanded[type];
 
   const wrap = document.createElement("div");
   wrap.className = "sport-item" + (doneToday ? " done" : "");
 
-  const header = document.createElement("button");
-  header.type = "button";
+  const header = document.createElement("div");
   header.className = "check-item note-item-head" + (doneToday ? " done" : "");
-  header.innerHTML = `
-    <span class="note-check">${doneToday ? "✅" : "☐"}</span>
-    <span class="txt"><span class="t">${label}</span>${todayCount ? `<span class="s">${todayCount} note${todayCount>1?"s":""} aujourd'hui</span>` : ""}</span>
-    <span class="note-chevron">${expanded ? "▾" : "▸"}</span>
-  `;
-  header.addEventListener("click", () => {
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = doneToday;
+  checkbox.addEventListener("change", (e) => {
+    today.lectureDone[type] = e.target.checked;
+    persist();
+    renderLectureCard();
+    renderProgress();
+    renderPills();
+  });
+
+  const labelArea = document.createElement("div");
+  labelArea.className = "txt";
+  labelArea.style.cursor = "pointer";
+  labelArea.innerHTML = `<span class="t">${label}</span>${existingNote ? `<span class="s">Enregistré aujourd'hui — clique pour modifier</span>` : ""}`;
+  labelArea.addEventListener("click", () => {
     lectureExpanded[type] = !lectureExpanded[type];
     renderLectureCard();
   });
+
+  const chevron = document.createElement("span");
+  chevron.className = "note-chevron";
+  chevron.style.cursor = "pointer";
+  chevron.textContent = expanded ? "▾" : "▸";
+  chevron.addEventListener("click", () => {
+    lectureExpanded[type] = !lectureExpanded[type];
+    renderLectureCard();
+  });
+
+  header.append(checkbox, labelArea, chevron);
   wrap.appendChild(header);
 
   if(expanded){
@@ -411,6 +705,7 @@ function buildNoteItem(type, label){
     const textarea = document.createElement("textarea");
     textarea.rows = 2;
     textarea.placeholder = type==="idee" ? "Écris ton idée…" : "Écris la citation…";
+    if(existingNote) textarea.value = existingNote.text;
     const saveBtn = document.createElement("button");
     saveBtn.type = "button";
     saveBtn.textContent = "Enregistrer";
@@ -420,7 +715,11 @@ function buildNoteItem(type, label){
       if(!text) return;
       if(!book){ alert("Ajoute d'abord un livre dans ta bibliothèque."); return; }
       if(!book.notes) book.notes = [];
-      book.notes.unshift({id:"note_"+Date.now(), type, text, date:todayKey()});
+      if(existingNote){
+        existingNote.text = text;
+      }else{
+        book.notes.unshift({id:"note_"+Date.now(), type, text, date:todayKey()});
+      }
       saveConfig(config);
       today.lectureDone[type] = true;
       persist();
@@ -465,9 +764,15 @@ function renderLectureCard(){
   pagesRow.appendChild(input);
   list.appendChild(pagesRow);
 
-  const doneCount = LECTURE_TASKS.filter(t => today.lectureDone[t.id]).length;
-  document.getElementById("lectureProgTxt").textContent = doneCount >= 1 ? `Objectif atteint ✓${doneCount > 1 ? ` (+${doneCount-1} bonus)` : ""}` : "Objectif : 1 tâche sur 3";
-  document.getElementById("lectureProgBar").style.width = (doneCount >= 1 ? 100 : 0)+"%";
+  const {done, total} = lectureCounts();
+  document.getElementById("lectureProgTxt").textContent = `${done}/${total}`;
+  document.getElementById("lectureProgBar").style.width = Math.round(done/total*100)+"%";
+}
+
+function lectureCounts(){
+  const total = LECTURE_TASKS.length;
+  const done = LECTURE_TASKS.filter(t => today.lectureDone[t.id]).length;
+  return {done, total};
 }
 
 function renderCalendar(){
@@ -497,68 +802,17 @@ function renderCalendar(){
     if(!c.other){
       const key = calYear+"-"+String(calMonth+1).padStart(2,"0")+"-"+String(c.n).padStart(2,"0");
       if(key === todayStr) el.classList.add("today");
+      if(key === viewKey && viewKey !== todayStr) el.classList.add("viewing");
       const rec = history[key];
       if(rec && (dayHasCategory(rec,"sport") || dayHasCategory(rec,"culture") || dayHasCategory(rec,"lecture"))) el.classList.add("has-data");
       el.classList.add("clickable");
-      el.addEventListener("click", () => openDayModal(key));
+      el.addEventListener("click", () => switchViewDay(key));
     }
     grid.appendChild(el);
   });
 }
 document.getElementById("calPrev").addEventListener("click", () => { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); });
 document.getElementById("calNext").addEventListener("click", () => { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); });
-
-function openDayModal(key){
-  const [y,m,d] = key.split("-").map(Number);
-  const dateObj = new Date(y, m-1, d);
-  document.getElementById("dayModalTitle").textContent = DAY_NAMES[dateObj.getDay()] + " " + dateObj.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
-
-  const rec = key === KEY ? today : history[key];
-  const body = document.getElementById("dayModalBody");
-
-  if(!rec){
-    body.innerHTML = `<p class="day-empty">Aucune donnée enregistrée ce jour-là.</p>`;
-  }else{
-    const sections = [];
-
-    if(rec.sport){
-      const s = rec.sport;
-      const items = [];
-      items.push(`<li class="${s.cardioDone?"ok":"no"}">${s.cardioDone?"✅":"☐"} ${s.cardioType==="footing"?"Footing":"Marche"}${(s.cardioDistance||s.cardioDuration)?` — ${s.cardioDistance||0} km / ${s.cardioDuration||0} min`:""}</li>`);
-      items.push(`<li class="${s.mobilityDone?"ok":"no"}">${s.mobilityDone?"✅":"☐"} Routine mobilité</li>`);
-      items.push(`<li class="${s.gymDone?"ok":"no"}">${s.gymDone?"✅":"☐"} Séance gym${s.gymType?` (${GYM_TYPES[s.gymType]||s.gymType})`:""}</li>`);
-      sections.push(`<div class="day-section"><h4>🏋️ Sport</h4><ul>${items.join("")}</ul></div>`);
-    }
-
-    if(rec.cultureTopic){
-      const topic = CULTURE_TOPICS[rec.cultureTopic];
-      const items = (topic ? topic.tasks : []).map(t => {
-        const done = !!(rec.cultureDone && rec.cultureDone[t.id]);
-        return `<li class="${done?"ok":"no"}">${done?"✅":"☐"} ${t.label}</li>`;
-      });
-      sections.push(`<div class="day-section"><h4>🧠 Culture — ${topic ? topic.label : rec.cultureTopic}</h4><ul>${items.join("")}</ul></div>`);
-    }
-
-    const lectureItems = LECTURE_TASKS.map(t => {
-      const done = !!(rec.lectureDone && rec.lectureDone[t.id]);
-      return `<li class="${done?"ok":"no"}">${done?"✅":"☐"} ${t.label}</li>`;
-    });
-    lectureItems.push(`<li class="ok">📄 Avancement : ${rec.lecturePages||0} pages</li>`);
-    sections.push(`<div class="day-section"><h4>📖 Lecture</h4><ul>${lectureItems.join("")}</ul></div>`);
-
-    body.innerHTML = sections.join("");
-  }
-
-  document.getElementById("dayModalOverlay").classList.add("open");
-}
-
-function closeDayModal(){
-  document.getElementById("dayModalOverlay").classList.remove("open");
-}
-document.getElementById("dayModalClose").addEventListener("click", closeDayModal);
-document.getElementById("dayModalOverlay").addEventListener("click", (e) => {
-  if(e.target.id === "dayModalOverlay") closeDayModal();
-});
 
 function weeklyCatCount(cat){
   return last7Dates().filter(k => dayHasCategory(history[k], cat)).length;
@@ -585,16 +839,13 @@ function renderPills(){
 }
 
 function renderProgress(){
-  const topic = CULTURE_TOPICS[today.cultureTopic];
-  const sportObjectiveMet = (today.sport.cardioDone || today.sport.mobilityDone || today.sport.gymDone) ? 1 : 0;
-  const cultureObjectiveMet = topic.tasks.some(t => today.cultureDone[t.id]) ? 1 : 0;
-  const lectureObjectiveMet = LECTURE_TASKS.some(t => today.lectureDone[t.id]) ? 1 : 0;
-  let total = 3;
-  let done = sportObjectiveMet + cultureObjectiveMet + lectureObjectiveMet;
+  const s = sportCounts(), c = cultureCounts(), l = lectureCounts(), w = wirdCounts();
+  const total = s.total + c.total + l.total + w.total;
+  const done = s.done + c.done + l.done + w.done;
   const pct = total ? Math.round(done/total*100) : 0;
   document.getElementById("progressPct").textContent = pct+"%";
   document.getElementById("progressBar").style.width = pct+"%";
-  document.getElementById("progressSub").textContent = `${done} / ${total} objectifs atteints`;
+  document.getElementById("progressSub").textContent = `${done} / ${total} tâches complétées`;
 }
 
 function renderWeeklyGoal(){
@@ -626,10 +877,11 @@ document.getElementById("qaNote").addEventListener("click", () => {
 
 function renderToday(){
   renderGreeting();
-  renderSportInto(document.getElementById("sportChecklist"));
+  renderSportChecklist(document.getElementById("sportChecklist"));
   renderSportProgress();
   renderCultureCard();
   renderLectureCard();
+  renderWirdEverywhere();
   renderWeeklyGoal();
   renderProgress();
   renderPills();
@@ -637,8 +889,134 @@ function renderToday(){
 
 /* ---------------- Render: Sport page ---------------- */
 
+function homeToggleBtn(isOn, onClick){
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "home-toggle" + (isOn ? " on" : "");
+  btn.textContent = isOn ? "✓ Sur l'accueil" : "+ Accueil";
+  btn.title = isOn ? "Retirer de l'accueil" : "Ajouter à l'accueil";
+  btn.addEventListener("click", onClick);
+  return btn;
+}
+
 function renderSportPage(){
-  renderSportInto(document.getElementById("sportPageBody"));
+  renderSportCatalog();
+  renderExtrasManager();
+  renderGymManager();
+}
+
+function renderSportCatalog(){
+  const wrap = document.getElementById("sportPageBody");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+
+  const cardioRow = document.createElement("div");
+  cardioRow.className = "manage-row";
+  cardioRow.innerHTML = `<span class="manage-label">Marche / Footing matinal</span>`;
+  cardioRow.appendChild(homeToggleBtn(config.sportOnHome.cardio, () => {
+    config.sportOnHome.cardio = !config.sportOnHome.cardio;
+    saveConfig(config);
+    renderSportCatalog();
+    renderSportEverywhere();
+  }));
+  wrap.appendChild(cardioRow);
+
+  const gymRow = document.createElement("div");
+  gymRow.className = "manage-row";
+  gymRow.innerHTML = `<span class="manage-label">Séance gym</span>`;
+  gymRow.appendChild(homeToggleBtn(config.sportOnHome.gym, () => {
+    config.sportOnHome.gym = !config.sportOnHome.gym;
+    saveConfig(config);
+    renderSportCatalog();
+    renderSportEverywhere();
+  }));
+  wrap.appendChild(gymRow);
+}
+
+function renderExtrasManager(){
+  const wrap = document.getElementById("extrasManager");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  config.sportExtras.forEach(extra => {
+    const row = document.createElement("div");
+    row.className = "manage-row";
+    row.innerHTML = `<span class="manage-label">${extra.label}</span>`;
+    row.appendChild(homeToggleBtn(!!extra.onHome, () => {
+      extra.onHome = !extra.onHome;
+      saveConfig(config);
+      renderExtrasManager();
+      renderSportEverywhere();
+    }));
+    const editBtn = document.createElement("button");
+    editBtn.type = "button"; editBtn.textContent = "✏️"; editBtn.title = "Renommer";
+    editBtn.addEventListener("click", () => {
+      const v = prompt("Nom de la routine :", extra.label);
+      if(v && v.trim()){ extra.label = v.trim(); saveConfig(config); renderExtrasManager(); renderSportEverywhere(); }
+    });
+    const delBtn = document.createElement("button");
+    delBtn.type = "button"; delBtn.textContent = "✕"; delBtn.title = "Supprimer";
+    delBtn.addEventListener("click", () => {
+      config.sportExtras = config.sportExtras.filter(x => x.id !== extra.id);
+      saveConfig(config);
+      delete today.sport.extras[extra.id];
+      persist();
+      renderExtrasManager(); renderSportEverywhere();
+    });
+    row.append(editBtn, delBtn);
+    wrap.appendChild(row);
+  });
+  const addBtn = document.createElement("button");
+  addBtn.type = "button"; addBtn.className = "add-btn"; addBtn.textContent = "+ Ajouter une routine";
+  addBtn.addEventListener("click", () => {
+    const v = prompt("Nom de la nouvelle routine :");
+    if(v && v.trim()){
+      config.sportExtras.push({id:"extra_"+Date.now(), label:v.trim(), onHome:false});
+      saveConfig(config);
+      renderExtrasManager(); renderSportEverywhere();
+    }
+  });
+  wrap.appendChild(addBtn);
+}
+
+function renderGymManager(){
+  const wrap = document.getElementById("gymManager");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  config.gymTypes.forEach(t => {
+    const row = document.createElement("div");
+    row.className = "manage-row";
+    row.innerHTML = `<span class="manage-label">${t.label}</span>`;
+    const editBtn = document.createElement("button");
+    editBtn.type = "button"; editBtn.textContent = "✏️"; editBtn.title = "Renommer";
+    editBtn.addEventListener("click", () => {
+      const v = prompt("Nom de la routine :", t.label);
+      if(v && v.trim()){ t.label = v.trim(); saveConfig(config); renderGymManager(); renderSportEverywhere(); }
+    });
+    const delBtn = document.createElement("button");
+    delBtn.type = "button"; delBtn.textContent = "✕"; delBtn.title = "Supprimer";
+    delBtn.addEventListener("click", () => {
+      config.gymTypes = config.gymTypes.filter(x => x.id !== t.id);
+      saveConfig(config);
+      if(today.sport.gymType === t.id){
+        today.sport.gymType = config.gymTypes[0] ? config.gymTypes[0].id : "";
+        persist();
+      }
+      renderGymManager(); renderSportEverywhere();
+    });
+    row.append(editBtn, delBtn);
+    wrap.appendChild(row);
+  });
+  const addBtn = document.createElement("button");
+  addBtn.type = "button"; addBtn.className = "add-btn"; addBtn.textContent = "+ Ajouter une routine";
+  addBtn.addEventListener("click", () => {
+    const v = prompt("Nom de la nouvelle routine de gym :");
+    if(v && v.trim()){
+      config.gymTypes.push({id:"gym_"+Date.now(), label:v.trim()});
+      saveConfig(config);
+      renderGymManager(); renderSportEverywhere();
+    }
+  });
+  wrap.appendChild(addBtn);
 }
 
 /* ---------------- Render: Culture page ---------------- */
@@ -701,12 +1079,52 @@ function renderLecturePage(){
       btn.addEventListener("click", () => { config.currentBookId = b.id; saveConfig(config); renderLecturePage(); });
       top.appendChild(btn);
     }
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "✏️ Modifier";
+    editBtn.addEventListener("click", () => {
+      const title = prompt("Titre du livre :", b.title);
+      if(!title || !title.trim()) return;
+      const author = prompt("Auteur (optionnel) :", b.author || "");
+      const pages = parseInt(prompt("Nombre de pages total :", b.totalPages || 0)) || 0;
+      b.title = title.trim();
+      b.author = (author || "").trim();
+      b.totalPages = pages;
+      saveConfig(config);
+      renderLecturePage();
+    });
+    top.appendChild(editBtn);
+    if(b.hasPdf){
+      const readBtn = document.createElement("button");
+      readBtn.textContent = "📖 Lire le PDF";
+      readBtn.addEventListener("click", () => openPdfReader(b));
+      top.appendChild(readBtn);
+      const rmPdfBtn = document.createElement("button");
+      rmPdfBtn.textContent = "🗑️ PDF";
+      rmPdfBtn.title = "Supprimer le PDF";
+      rmPdfBtn.addEventListener("click", async () => {
+        await deletePdf(b.id);
+        b.hasPdf = false;
+        saveConfig(config);
+        renderLecturePage();
+      });
+      top.appendChild(rmPdfBtn);
+    }else{
+      const uploadBtn = document.createElement("button");
+      uploadBtn.textContent = "📄 Ajouter le PDF";
+      uploadBtn.addEventListener("click", () => {
+        pdfUploadTargetId = b.id;
+        document.getElementById("pdfFileInput").click();
+      });
+      top.appendChild(uploadBtn);
+    }
     const del = document.createElement("button");
     del.textContent = "Supprimer";
     del.addEventListener("click", () => {
       config.books = config.books.filter(x => x.id !== b.id);
       if(config.currentBookId === b.id) config.currentBookId = config.books[0] ? config.books[0].id : null;
-      saveConfig(config); renderLecturePage();
+      saveConfig(config);
+      deletePdf(b.id);
+      renderLecturePage();
     });
     top.appendChild(del);
     el.appendChild(top);
@@ -762,6 +1180,38 @@ document.getElementById("addBookBtn").addEventListener("click", () => {
   config.currentBookId = id;
   saveConfig(config);
   renderLecturePage();
+});
+
+let pdfUploadTargetId = null;
+document.getElementById("pdfFileInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if(!file || !pdfUploadTargetId) return;
+  if(file.type !== "application/pdf"){ alert("Merci de choisir un fichier PDF."); return; }
+  const book = config.books.find(b => b.id === pdfUploadTargetId);
+  if(!book) return;
+  await savePdf(book.id, file);
+  book.hasPdf = true;
+  saveConfig(config);
+  pdfUploadTargetId = null;
+  renderLecturePage();
+});
+
+async function openPdfReader(book){
+  const blob = await getPdf(book.id);
+  if(!blob){ alert("Aucun PDF trouvé pour ce livre."); return; }
+  const url = URL.createObjectURL(blob);
+  document.getElementById("pdfReaderTitle").textContent = book.title;
+  document.getElementById("pdfFrame").src = url + "#view=FitH";
+  goto("pdfreader");
+}
+document.getElementById("pdfReaderBack").addEventListener("click", () => {
+  document.getElementById("pdfFrame").src = "";
+  goto("lecture");
+});
+document.getElementById("pdfFullscreenBtn").addEventListener("click", () => {
+  const frame = document.getElementById("pdfFrame");
+  if(frame.requestFullscreen) frame.requestFullscreen();
 });
 
 /* ---------------- Render: Stats page ---------------- */

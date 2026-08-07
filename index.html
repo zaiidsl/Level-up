@@ -30,6 +30,7 @@
       <li><button data-page="sport"><span class="icon">🏋️</span><span>Sport</span></button></li>
       <li><button data-page="culture"><span class="icon">🌍</span><span>Culture</span></button></li>
       <li><button data-page="lecture"><span class="icon">📖</span><span>Lecture</span></button></li>
+      <li><button data-page="wird"><span class="icon">🕌</span><span>Wird Yawmi</span></button></li>
       <li><button data-page="stats"><span class="icon">📊</span><span>Statistiques</span></button></li>
       <li><button data-page="notes"><span class="icon">📝</span><span>Notes</span></button></li>
     </ul>
@@ -45,9 +46,16 @@
 
     <!-- ================= TODAY ================= -->
     <section class="page active" data-page="today">
+      <div class="viewing-banner" id="viewingBanner">
+        <span class="viewing-text"></span>
+        <button id="backToTodayBtn" type="button">← Revenir à aujourd'hui</button>
+      </div>
       <div class="topbar">
         <div class="greeting">
-          <h1 id="greeting">Bonjour 👋</h1>
+          <div class="greeting-row">
+            <h1 id="greeting">Bonjour 👋</h1>
+            <button id="editNameBtn" class="name-edit-btn" type="button">✏️ Ajouter mon prénom</button>
+          </div>
           <p id="todayDate"></p>
         </div>
         <div class="progress-card">
@@ -66,7 +74,7 @@
       <div class="grid3">
         <div class="card" id="sportCard">
           <div class="card-head"><span class="emoji">🏋️</span><h3>SPORT</h3></div>
-          <p class="card-sub"><span class="caption">Objectif : 1 case sur 3 (le reste, c'est du bonus)</span></p>
+          <p class="card-sub"><span class="caption" id="sportObjectiveCaption"></span></p>
           <div class="checklist" id="sportChecklist"></div>
           <div class="card-progress"><span id="sportProgTxt">0/0</span><div class="bar"><div class="bar-fill" id="sportProgBar" style="width:0%"></div></div></div>
           <button class="card-btn" data-goto="sport">Voir le détail de la séance ›</button>
@@ -87,6 +95,15 @@
           <div class="card-progress"><span id="lectureProgTxt">0/0</span><div class="bar"><div class="bar-fill" id="lectureProgBar" style="width:0%"></div></div></div>
           <button class="card-btn" data-goto="lecture">Voir ma bibliothèque ›</button>
         </div>
+      </div>
+
+      <div class="card" id="wirdCard" style="margin-bottom:16px;">
+        <div class="card-head"><span class="emoji">🕌</span><h3>WIRD YAWMI</h3></div>
+        <p class="card-sub"><span class="caption" id="wirdObjectiveCaption"></span></p>
+        <div class="prayer-row" id="prayerRow"></div>
+        <div class="checklist" id="coranChecklist"></div>
+        <div class="card-progress"><span id="wirdProgTxt">0/6</span><div class="bar"><div class="bar-fill" id="wirdProgBar" style="width:0%"></div></div></div>
+        <button class="card-btn" data-goto="wird">Voir le détail ›</button>
       </div>
 
       <div class="grid2">
@@ -129,9 +146,22 @@
 
     <!-- ================= SPORT ================= -->
     <section class="page" data-page="sport">
-      <div class="page-title"><h2>🏋️ Sport — plan du jour</h2></div>
+      <div class="page-title"><h2>🏋️ Sport — mes routines</h2></div>
+      <p class="page-hint">Ajoute une routine à l'accueil pour pouvoir la cocher là-bas. Ici, tu ne fais que gérer la liste.</p>
+
       <div class="routine-block">
-        <div class="checklist" id="sportPageBody"></div>
+        <h3>Cardio &amp; Gym</h3>
+        <div id="sportPageBody" class="manage-list"></div>
+      </div>
+
+      <div class="routine-block">
+        <h3>Mes routines annexes</h3>
+        <div id="extrasManager" class="manage-list"></div>
+      </div>
+
+      <div class="routine-block">
+        <h3>Types de séance gym</h3>
+        <div id="gymManager" class="manage-list"></div>
       </div>
     </section>
 
@@ -157,6 +187,41 @@
     <section class="page" data-page="lecture">
       <div class="page-title"><h2>📖 Ma bibliothèque</h2><button class="add-btn" id="addBookBtn">+ Ajouter un livre</button></div>
       <div id="booksList"></div>
+      <input type="file" id="pdfFileInput" accept="application/pdf" style="display:none;">
+    </section>
+
+    <!-- ================= LECTEUR PDF ================= -->
+    <section class="page pdf-reader-page" data-page="pdfreader">
+      <div class="page-title">
+        <h2 id="pdfReaderTitle"></h2>
+        <div class="pdf-reader-actions">
+          <button class="add-btn" id="pdfFullscreenBtn" type="button">⛶ Plein écran</button>
+          <button class="add-btn" id="pdfReaderBack" type="button">← Retour à la bibliothèque</button>
+        </div>
+      </div>
+      <iframe id="pdfFrame" title="Lecteur PDF" class="pdf-reader-frame"></iframe>
+    </section>
+
+    <!-- ================= WIRD YAWMI ================= -->
+    <section class="page" data-page="wird">
+      <div class="page-title"><h2>🕌 Wird Yawmi</h2></div>
+
+      <div class="routine-block">
+        <h3>Les 5 prières</h3>
+        <div class="prayer-row" id="prayerPageBody"></div>
+      </div>
+
+      <div class="routine-block">
+        <h3>Lecture du Coran</h3>
+        <div class="manage-row" style="margin-bottom:10px;">
+          <span class="manage-label">Suivi par</span>
+          <select id="wirdModeSelect">
+            <option value="hizb">Hizb</option>
+            <option value="pages">Pages</option>
+          </select>
+        </div>
+        <div class="checklist" id="coranPageBody"></div>
+      </div>
     </section>
 
     <!-- ================= STATS ================= -->
@@ -173,16 +238,6 @@
 
     <footer>DOSSIER PERSONNEL — USAGE STRICTEMENT INDIVIDUEL</footer>
   </main>
-</div>
-
-<div class="day-modal-overlay" id="dayModalOverlay">
-  <div class="day-modal">
-    <div class="day-modal-head">
-      <h3 id="dayModalTitle"></h3>
-      <button id="dayModalClose">✕</button>
-    </div>
-    <div class="day-modal-body" id="dayModalBody"></div>
-  </div>
 </div>
 
 <script src="app.js"></script>
