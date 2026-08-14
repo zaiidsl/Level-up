@@ -531,25 +531,25 @@ const PRAYER_CALC_METHODS = [
 const HADITH_PREFIX = "قَالَ رَسُولُ اللَّهِ (ﷺ): ";
 
 const DAILY_WISDOM = [
-  {type:"aya", arabic:"لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا", text:"Allah ne charge personne au-delà de sa capacité.", source:"Sourate Al-Baqara, 2:286"},
+  {type:"aya", arabic:"لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا", text:"Allah ne charge personne au-delà de sa capacité.", source:"Sourate Al-Baqara, 2:286", sourceAr:"سورة البقرة، الآية ٢٨٦"},
   {type:"hadith", arabic:HADITH_PREFIX+"إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ", text:"Les actions ne valent que par les intentions.", source:"Rapporté par Al-Bukhari et Muslim"},
-  {type:"aya", arabic:"إِنَّ مَعَ الْعُسْرِ يُسْرًا", text:"Certes, avec la difficulté il y a une facilité.", source:"Sourate Ash-Sharh, 94:6"},
+  {type:"aya", arabic:"إِنَّ مَعَ الْعُسْرِ يُسْرًا", text:"Certes, avec la difficulté il y a une facilité.", source:"Sourate Ash-Sharh, 94:6", sourceAr:"سورة الشرح، الآية ٦"},
   {type:"hadith", arabic:HADITH_PREFIX+"تَبَسُّمُكَ فِي وَجْهِ أَخِيكَ صَدَقَةٌ", text:"Le sourire à ton frère est une aumône.", source:"Rapporté par At-Tirmidhi"},
-  {type:"aya", arabic:"وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ", text:"Quiconque place sa confiance en Allah, Il lui suffit.", source:"Sourate At-Talaq, 65:3"},
+  {type:"aya", arabic:"وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ", text:"Quiconque place sa confiance en Allah, Il lui suffit.", source:"Sourate At-Talaq, 65:3", sourceAr:"سورة الطلاق، الآية ٣"},
   {type:"hadith", arabic:HADITH_PREFIX+"خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ", text:"Le meilleur d'entre vous est celui qui apprend le Coran et l'enseigne.", source:"Rapporté par Al-Bukhari"},
-  {type:"aya", arabic:"أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ", text:"C'est par le rappel d'Allah que les cœurs se tranquillisent.", source:"Sourate Ar-Ra'd, 13:28"},
+  {type:"aya", arabic:"أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ", text:"C'est par le rappel d'Allah que les cœurs se tranquillisent.", source:"Sourate Ar-Ra'd, 13:28", sourceAr:"سورة الرعد، الآية ٢٨"},
   {type:"hadith", arabic:HADITH_PREFIX+"لَا يَشْكُرُ اللَّهَ مَنْ لَا يَشْكُرُ النَّاسَ", text:"Celui qui ne remercie pas les gens ne remercie pas Allah.", source:"Rapporté par At-Tirmidhi"},
-  {type:"aya", arabic:"ادْعُونِي أَسْتَجِبْ لَكُمْ", text:"Invoquez-Moi, Je vous répondrai.", source:"Sourate Ghafir, 40:60"},
+  {type:"aya", arabic:"ادْعُونِي أَسْتَجِبْ لَكُمْ", text:"Invoquez-Moi, Je vous répondrai.", source:"Sourate Ghafir, 40:60", sourceAr:"سورة غافر، الآية ٦٠"},
   {type:"hadith", arabic:HADITH_PREFIX+"الطُّهُورُ شَطْرُ الْإِيمَانِ", text:"La propreté est la moitié de la foi.", source:"Rapporté par Muslim"},
-  {type:"aya", arabic:"إِنَّ اللَّهَ مَعَ الصَّابِرِينَ", text:"Allah est avec les patients.", source:"Sourate Al-Baqara, 2:153"},
+  {type:"aya", arabic:"إِنَّ اللَّهَ مَعَ الصَّابِرِينَ", text:"Allah est avec les patients.", source:"Sourate Al-Baqara, 2:153", sourceAr:"سورة البقرة، الآية ١٥٣"},
   {type:"hadith", arabic:HADITH_PREFIX+"يَسِّرُوا وَلَا تُعَسِّرُوا وَبَشِّرُوا وَلَا تُنَفِّرُوا", text:"Facilitez et ne compliquez pas, annoncez la bonne nouvelle et ne repoussez pas les gens.", source:"Rapporté par Al-Bukhari"},
-  {type:"aya", arabic:"وَذَكِّرْ فَإِنَّ الذِّكْرَى تَنفَعُ الْمُؤْمِنِينَ", text:"Rappelle, car le rappel profite aux croyants.", source:"Sourate Adh-Dhariyat, 51:55"},
+  {type:"aya", arabic:"وَذَكِّرْ فَإِنَّ الذِّكْرَى تَنفَعُ الْمُؤْمِنِينَ", text:"Rappelle, car le rappel profite aux croyants.", source:"Sourate Adh-Dhariyat, 51:55", sourceAr:"سورة الذاريات، الآية ٥٥"},
   {type:"hadith", arabic:HADITH_PREFIX+"لَيْسَ الشَّدِيدُ بِالصُّرَعَةِ إِنَّمَا الشَّدِيدُ الَّذِي يَمْلِكُ نَفْسَهُ عِنْدَ الْغَضَبِ", text:"Le fort n'est pas celui qui terrasse les autres, mais celui qui se maîtrise en cas de colère.", source:"Rapporté par Al-Bukhari et Muslim"},
-  {type:"aya", arabic:"لَا تَقْنَطُوا مِن رَّحْمَةِ اللَّهِ", text:"Ne perdez pas espoir de la miséricorde d'Allah.", source:"Sourate Az-Zumar, 39:53"},
+  {type:"aya", arabic:"لَا تَقْنَطُوا مِن رَّحْمَةِ اللَّهِ", text:"Ne perdez pas espoir de la miséricorde d'Allah.", source:"Sourate Az-Zumar, 39:53", sourceAr:"سورة الزمر، الآية ٥٣"},
   {type:"hadith", arabic:HADITH_PREFIX+"لَا يُؤْمِنُ أَحَدُكُمْ حَتَّى يُحِبَّ لِأَخِيهِ مَا يُحِبُّ لِنَفْسِهِ", text:"Aucun de vous n'est vraiment croyant tant qu'il n'aime pas pour son frère ce qu'il aime pour lui-même.", source:"Rapporté par Al-Bukhari et Muslim"},
-  {type:"aya", arabic:"إِنَّ الصَّلَاةَ تَنْهَىٰ عَنِ الْفَحْشَاءِ وَالْمُنكَرِ", text:"La prière préserve de la turpitude et du blâmable.", source:"Sourate Al-Ankabut, 29:45"},
+  {type:"aya", arabic:"إِنَّ الصَّلَاةَ تَنْهَىٰ عَنِ الْفَحْشَاءِ وَالْمُنكَرِ", text:"La prière préserve de la turpitude et du blâmable.", source:"Sourate Al-Ankabut, 29:45", sourceAr:"سورة العنكبوت، الآية ٤٥"},
   {type:"hadith", arabic:HADITH_PREFIX+"الْكَلِمَةُ الطَّيِّبَةُ صَدَقَةٌ", text:"La bonne parole est une aumône.", source:"Rapporté par Al-Bukhari et Muslim"},
-  {type:"aya", arabic:"وَمَا كَانَ رَبُّكَ نَسِيًّا", text:"Et ton Seigneur n'oublie jamais rien.", source:"Sourate Maryam, 19:64"},
+  {type:"aya", arabic:"وَمَا كَانَ رَبُّكَ نَسِيًّا", text:"Et ton Seigneur n'oublie jamais rien.", source:"Sourate Maryam, 19:64", sourceAr:"سورة مريم، الآية ٦٤"},
   {type:"hadith", arabic:HADITH_PREFIX+"إِنَّ اللَّهَ رَفِيقٌ يُحِبُّ الرِّفْقَ فِي الْأَمْرِ كُلِّهِ", text:"Allah est doux et aime la douceur en toute chose.", source:"Rapporté par Muslim"},
 ];
 
@@ -1167,13 +1167,19 @@ function todayWisdom(){
 function renderDailyWisdom(){
   const w = todayWisdom();
   const badge = w.type === "aya" ? "📖 Aya du jour" : "🕋 Hadith du jour";
-  [{ar:"wisdomHomeArabic", txt:"wisdomHomeText", src:"wisdomHomeSource", badge:"wisdomHomeBadge"},
-   {ar:"wisdomPageArabic", txt:"wisdomPageText", src:"wisdomPageSource", badge:"wisdomPageBadge"}].forEach(ids => {
+  const arabicSafe = (w.arabic || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const arabicHtml = w.type === "aya"
+    ? `<span class="quran-bracket">﴿</span>${arabicSafe}<span class="quran-bracket">﴾</span>`
+    : arabicSafe;
+  [{ar:"wisdomHomeArabic", srcAr:"wisdomHomeSourceAr", txt:"wisdomHomeText", src:"wisdomHomeSource", badge:"wisdomHomeBadge"},
+   {ar:"wisdomPageArabic", srcAr:"wisdomPageSourceAr", txt:"wisdomPageText", src:"wisdomPageSource", badge:"wisdomPageBadge"}].forEach(ids => {
     const arEl = document.getElementById(ids.ar);
+    const srcArEl = document.getElementById(ids.srcAr);
     const txtEl = document.getElementById(ids.txt);
     const srcEl = document.getElementById(ids.src);
     const badgeEl = document.getElementById(ids.badge);
-    if(arEl) arEl.textContent = w.arabic || "";
+    if(arEl) arEl.innerHTML = arabicHtml;
+    if(srcArEl) srcArEl.textContent = w.sourceAr || "";
     if(txtEl) txtEl.textContent = `« ${w.text} »`;
     if(srcEl) srcEl.textContent = w.source;
     if(badgeEl) badgeEl.textContent = badge;

@@ -187,8 +187,13 @@ a{color:var(--gold);}
 }
 .wisdom-badge{display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--gold); margin-bottom:6px;}
 .wisdom-arabic{
-  margin:0 0 8px; font-family:'Amiri', serif; font-size:22px; line-height:1.9;
+  margin:0 0 6px; font-family:'Amiri', serif; font-size:22px; line-height:1.9;
   text-align:right; color:var(--text);
+}
+.wisdom-arabic .quran-bracket{color:var(--gold); font-size:1.15em; font-weight:700;}
+.wisdom-source-ar{
+  margin:0 0 10px; font-family:'Amiri', serif; font-size:14px; text-align:right;
+  color:var(--gold); font-weight:700;
 }
 .wisdom-text{margin:0 0 4px; font-size:14px; font-style:italic; line-height:1.5;}
 .wisdom-source{font-size:11.5px; color:var(--muted);}
