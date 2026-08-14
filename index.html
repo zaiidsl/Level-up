@@ -219,6 +219,34 @@
         </tbody>
       </table>
       <div id="pillars"></div>
+
+      <div class="routine-block">
+        <h3>Flashcards — révision espacée</h3>
+        <div class="manage-row">
+          <input type="text" id="flashcardFrontInput" placeholder="Recto (question / concept)">
+        </div>
+        <div class="manage-row">
+          <input type="text" id="flashcardBackInput" placeholder="Verso (réponse)">
+        </div>
+        <button type="button" class="add-btn" id="flashcardAddBtn" style="margin-bottom:10px;">+ Ajouter la carte</button>
+        <button type="button" class="card-btn" id="flashcardReviewBtn" style="margin-bottom:10px;">▶ Réviser (0)</button>
+        <div id="flashcardReviewPanel"></div>
+        <div id="flashcardsList" class="flashcards-list"></div>
+      </div>
+
+      <div class="routine-block">
+        <h3>Carnet de citations culturelles</h3>
+        <div class="manage-row">
+          <input type="text" id="cultureQuoteInput" placeholder="Une phrase marquante lue aujourd'hui…">
+          <button type="button" id="cultureQuoteAddBtn">Ajouter</button>
+        </div>
+        <div id="cultureQuotesList"></div>
+      </div>
+
+      <div class="routine-block">
+        <h3>Historique des contenus</h3>
+        <div id="cultureHistoryList"></div>
+      </div>
     </section>
 
     <!-- ================= LECTURE ================= -->

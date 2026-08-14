@@ -632,6 +632,8 @@ function loadConfig(){
     prayerLat:null,
     prayerLon:null,
     prayerLocationLabel:"",
+    cultureQuotes:[],
+    flashcards:[],
   };
 }
 function defaultGymType(weekday){
@@ -681,6 +683,8 @@ let viewKey = KEY;
 let today = ensureDayShape(history[KEY]);
 config.books.forEach(b => { if(!b.notes) b.notes = []; });
 if(!config.cultureNotes) config.cultureNotes = [];
+if(!config.cultureQuotes) config.cultureQuotes = [];
+if(!config.flashcards) config.flashcards = [];
 
 function persist(){
   history[viewKey] = today;
@@ -2047,7 +2051,192 @@ function renderCulturePage(){
     });
     wrap.appendChild(el);
   });
+  renderCultureHistory();
+  renderCultureQuotes();
+  renderFlashcardsList();
 }
+
+/* ---------------- Culture: historique des contenus ---------------- */
+
+function renderCultureHistory(){
+  const wrap = document.getElementById("cultureHistoryList");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  const titleNotes = config.cultureNotes.filter(n => n.kind === "title").sort((a,b) => b.date.localeCompare(a.date));
+  if(!titleNotes.length){ wrap.innerHTML = `<p class="empty">Aucun contenu enregistré pour le moment.</p>`; return; }
+  titleNotes.forEach(n => {
+    const topic = CULTURE_TOPICS[n.topicId];
+    const el = document.createElement("div");
+    el.className = "history-row";
+    el.innerHTML = `
+      <div class="history-main">
+        <div class="history-title">${n.text}</div>
+        <div class="history-meta">${n.date} · ${topic ? topic.label : ""}</div>
+      </div>
+      <div class="history-stars"></div>
+    `;
+    const starsWrap = el.querySelector(".history-stars");
+    for(let i=1;i<=5;i++){
+      const star = document.createElement("span");
+      star.className = "star" + (i <= (n.rating||0) ? " filled" : "");
+      star.textContent = "★";
+      star.addEventListener("click", () => {
+        n.rating = (n.rating === i) ? 0 : i;
+        saveConfig(config);
+        renderCultureHistory();
+      });
+      starsWrap.appendChild(star);
+    }
+    wrap.appendChild(el);
+  });
+}
+
+/* ---------------- Culture: carnet de citations ---------------- */
+
+function renderCultureQuotes(){
+  const wrap = document.getElementById("cultureQuotesList");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  if(!config.cultureQuotes.length){ wrap.innerHTML = `<p class="empty">Aucune citation enregistrée.</p>`; return; }
+  config.cultureQuotes.slice().reverse().forEach(q => {
+    const topic = CULTURE_TOPICS[q.topicId];
+    const el = document.createElement("div");
+    el.className = "quote-row";
+    el.innerHTML = `
+      <div class="quote-text">« ${q.text} »</div>
+      <div class="quote-meta">${q.date}${topic ? " · "+topic.label : ""}</div>
+    `;
+    const del = document.createElement("button");
+    del.type = "button"; del.className = "quote-del"; del.title = "Supprimer"; del.textContent = "✕";
+    del.addEventListener("click", () => {
+      config.cultureQuotes = config.cultureQuotes.filter(x => x.id !== q.id);
+      saveConfig(config);
+      renderCultureQuotes();
+    });
+    el.appendChild(del);
+    wrap.appendChild(el);
+  });
+}
+
+/* ---------------- Culture: flashcards / révision espacée ---------------- */
+
+const LEITNER_INTERVALS = {1:1, 2:3, 3:7, 4:16, 5:35};
+
+function addDaysToKey(dateKeyStr, n){
+  const [y,m,d] = dateKeyStr.split("-").map(Number);
+  const dt = new Date(y, m-1, d);
+  dt.setDate(dt.getDate()+n);
+  return todayKey(dt);
+}
+
+function dueFlashcards(){
+  const key = todayKey();
+  return config.flashcards.filter(c => c.nextReview <= key);
+}
+
+let flashcardReviewQueue = [];
+let flashcardReviewIndex = 0;
+let flashcardShowBack = false;
+
+function startFlashcardReview(){
+  flashcardReviewQueue = dueFlashcards();
+  flashcardReviewIndex = 0;
+  flashcardShowBack = false;
+  renderFlashcardReview();
+}
+
+function renderFlashcardReview(){
+  const panel = document.getElementById("flashcardReviewPanel");
+  if(!panel) return;
+  if(!flashcardReviewQueue.length || flashcardReviewIndex >= flashcardReviewQueue.length){
+    panel.innerHTML = flashcardReviewQueue.length
+      ? `<p class="empty">Révision terminée 🎉</p>`
+      : `<p class="empty">Aucune carte à réviser aujourd'hui.</p>`;
+    return;
+  }
+  const card = flashcardReviewQueue[flashcardReviewIndex];
+  panel.innerHTML = `
+    <div class="flashcard">
+      <div class="flashcard-progress">${flashcardReviewIndex+1} / ${flashcardReviewQueue.length}</div>
+      <div class="flashcard-face">${flashcardShowBack ? card.back : card.front}</div>
+      ${flashcardShowBack ? "" : `<button type="button" id="flashcardRevealBtn">Afficher la réponse</button>`}
+      ${flashcardShowBack ? `<div class="flashcard-grades">
+        <button type="button" data-grade="hard">Difficile</button>
+        <button type="button" data-grade="medium">Moyen</button>
+        <button type="button" data-grade="easy">Facile</button>
+      </div>` : ""}
+    </div>
+  `;
+  if(!flashcardShowBack){
+    document.getElementById("flashcardRevealBtn").onclick = () => { flashcardShowBack = true; renderFlashcardReview(); };
+  }else{
+    panel.querySelectorAll("[data-grade]").forEach(btn => {
+      btn.onclick = () => {
+        const grade = btn.dataset.grade;
+        if(grade === "hard") card.box = 1;
+        else if(grade === "easy") card.box = Math.min(5, card.box+1);
+        card.nextReview = addDaysToKey(todayKey(), LEITNER_INTERVALS[card.box]);
+        saveConfig(config);
+        flashcardReviewIndex++;
+        flashcardShowBack = false;
+        renderFlashcardReview();
+        renderFlashcardsList();
+      };
+    });
+  }
+}
+
+function renderFlashcardsList(){
+  const wrap = document.getElementById("flashcardsList");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  if(!config.flashcards.length){ wrap.innerHTML = `<p class="empty">Aucune flashcard pour le moment.</p>`; }
+  config.flashcards.forEach(c => {
+    const topic = CULTURE_TOPICS[c.topicId];
+    const isDue = c.nextReview <= todayKey();
+    const el = document.createElement("div");
+    el.className = "flashcard-row" + (isDue ? " due" : "");
+    el.innerHTML = `
+      <div class="fc-content">
+        <div class="fc-front">${c.front}</div>
+        <div class="fc-meta">${topic ? topic.label : ""} · ${isDue ? "à réviser" : "prochaine révision : "+c.nextReview}</div>
+      </div>
+    `;
+    const del = document.createElement("button");
+    del.type = "button"; del.className = "fc-del"; del.title = "Supprimer"; del.textContent = "✕";
+    del.addEventListener("click", () => {
+      config.flashcards = config.flashcards.filter(x => x.id !== c.id);
+      saveConfig(config);
+      renderFlashcardsList();
+    });
+    el.appendChild(del);
+    wrap.appendChild(el);
+  });
+  const btn = document.getElementById("flashcardReviewBtn");
+  if(btn) btn.textContent = `▶ Réviser (${dueFlashcards().length})`;
+}
+
+document.getElementById("flashcardAddBtn").addEventListener("click", () => {
+  const frontInput = document.getElementById("flashcardFrontInput");
+  const backInput = document.getElementById("flashcardBackInput");
+  const front = frontInput.value.trim();
+  const back = backInput.value.trim();
+  if(!front || !back) return;
+  config.flashcards.push({id:"fc_"+Date.now(), front, back, topicId:today.cultureTopic, box:1, nextReview:todayKey()});
+  saveConfig(config);
+  frontInput.value = ""; backInput.value = "";
+  renderFlashcardsList();
+});
+document.getElementById("flashcardReviewBtn").addEventListener("click", startFlashcardReview);
+document.getElementById("cultureQuoteAddBtn").addEventListener("click", () => {
+  const input = document.getElementById("cultureQuoteInput");
+  const text = input.value.trim();
+  if(!text) return;
+  config.cultureQuotes.push({id:"cq_"+Date.now(), text, topicId:today.cultureTopic, date:todayKey()});
+  saveConfig(config);
+  input.value = "";
+  renderCultureQuotes();
+});
 
 /* ---------------- Render: Lecture page ---------------- */
 

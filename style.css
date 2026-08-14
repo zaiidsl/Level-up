@@ -481,6 +481,54 @@ a{color:var(--gold);}
 .note-card button:hover{color:var(--gold);}
 .empty{color:var(--muted); font-size:13px; padding:20px 0; text-align:center;}
 
+.history-row{
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  padding:10px 0; border-bottom:1px solid var(--border);
+}
+.history-row:last-child{border-bottom:none;}
+.history-title{font-size:13px; font-weight:500;}
+.history-meta{font-size:11px; color:var(--muted); margin-top:2px;}
+.history-stars{flex-shrink:0; white-space:nowrap;}
+.history-stars .star{cursor:pointer; color:var(--border); font-size:15px;}
+.history-stars .star.filled{color:var(--gold);}
+
+.quote-row{
+  position:relative; padding:12px 32px 12px 14px; border-left:3px solid var(--gold);
+  background:var(--bg); border-radius:8px; margin-bottom:8px;
+}
+.quote-text{font-size:13px; font-style:italic; line-height:1.5;}
+.quote-meta{font-size:10.5px; color:var(--muted); margin-top:4px;}
+.quote-del{
+  position:absolute; top:10px; right:10px; background:none; border:none;
+  color:var(--muted); cursor:pointer; font-size:13px;
+}
+.quote-del:hover{color:var(--gold);}
+
+.flashcards-list{margin-top:10px;}
+.flashcard-row{
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  padding:9px 0; border-bottom:1px solid var(--border);
+}
+.flashcard-row:last-child{border-bottom:none;}
+.flashcard-row.due .fc-meta{color:var(--gold); font-weight:600;}
+.fc-front{font-size:13px; font-weight:500;}
+.fc-meta{font-size:11px; color:var(--muted); margin-top:2px;}
+.fc-del{background:none; border:none; color:var(--muted); cursor:pointer; font-size:13px; flex-shrink:0;}
+.fc-del:hover{color:var(--gold);}
+
+.flashcard{
+  background:var(--bg); border:1px solid var(--border); border-radius:12px;
+  padding:20px 16px; text-align:center; margin-bottom:10px;
+}
+.flashcard-progress{font-size:11px; color:var(--muted); margin-bottom:10px;}
+.flashcard-face{font-size:16px; font-weight:600; margin-bottom:14px; min-height:40px; display:flex; align-items:center; justify-content:center;}
+.flashcard button{
+  background:var(--card); border:1px solid var(--border); border-radius:8px;
+  padding:8px 14px; font-size:12.5px; cursor:pointer; color:var(--text); margin:0 4px;
+}
+.flashcard button:hover{border-color:var(--gold); color:var(--gold);}
+.flashcard-grades{display:flex; justify-content:center; flex-wrap:wrap;}
+
 footer{margin-top:24px; text-align:center; font-size:11px; color:var(--muted); letter-spacing:0.5px;}
 
 /* ---------- Mobile ---------- */
