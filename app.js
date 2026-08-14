@@ -487,6 +487,40 @@ const PRAYERS = [
   {id:"isha", label:"Isha"},
 ];
 
+const PRAYER_TIMES_KEYS = ["Fajr","Dhuhr","Asr","Maghrib","Isha"];
+const PRAYER_CALC_METHODS = [
+  {id:"3", label:"Muslim World League"},
+  {id:"2", label:"ISNA (Amérique du Nord)"},
+  {id:"4", label:"Umm Al-Qura (Mecque)"},
+  {id:"5", label:"Égypte"},
+  {id:"1", label:"Karachi"},
+];
+
+const HADITH_PREFIX = "قَالَ رَسُولُ اللَّهِ (ﷺ): ";
+
+const DAILY_WISDOM = [
+  {type:"aya", arabic:"لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا", text:"Allah ne charge personne au-delà de sa capacité.", source:"Sourate Al-Baqara, 2:286"},
+  {type:"hadith", arabic:HADITH_PREFIX+"إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ", text:"Les actions ne valent que par les intentions.", source:"Rapporté par Al-Bukhari et Muslim"},
+  {type:"aya", arabic:"إِنَّ مَعَ الْعُسْرِ يُسْرًا", text:"Certes, avec la difficulté il y a une facilité.", source:"Sourate Ash-Sharh, 94:6"},
+  {type:"hadith", arabic:HADITH_PREFIX+"تَبَسُّمُكَ فِي وَجْهِ أَخِيكَ صَدَقَةٌ", text:"Le sourire à ton frère est une aumône.", source:"Rapporté par At-Tirmidhi"},
+  {type:"aya", arabic:"وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ", text:"Quiconque place sa confiance en Allah, Il lui suffit.", source:"Sourate At-Talaq, 65:3"},
+  {type:"hadith", arabic:HADITH_PREFIX+"خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ", text:"Le meilleur d'entre vous est celui qui apprend le Coran et l'enseigne.", source:"Rapporté par Al-Bukhari"},
+  {type:"aya", arabic:"أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ", text:"C'est par le rappel d'Allah que les cœurs se tranquillisent.", source:"Sourate Ar-Ra'd, 13:28"},
+  {type:"hadith", arabic:HADITH_PREFIX+"لَا يَشْكُرُ اللَّهَ مَنْ لَا يَشْكُرُ النَّاسَ", text:"Celui qui ne remercie pas les gens ne remercie pas Allah.", source:"Rapporté par At-Tirmidhi"},
+  {type:"aya", arabic:"ادْعُونِي أَسْتَجِبْ لَكُمْ", text:"Invoquez-Moi, Je vous répondrai.", source:"Sourate Ghafir, 40:60"},
+  {type:"hadith", arabic:HADITH_PREFIX+"الطُّهُورُ شَطْرُ الْإِيمَانِ", text:"La propreté est la moitié de la foi.", source:"Rapporté par Muslim"},
+  {type:"aya", arabic:"إِنَّ اللَّهَ مَعَ الصَّابِرِينَ", text:"Allah est avec les patients.", source:"Sourate Al-Baqara, 2:153"},
+  {type:"hadith", arabic:HADITH_PREFIX+"يَسِّرُوا وَلَا تُعَسِّرُوا وَبَشِّرُوا وَلَا تُنَفِّرُوا", text:"Facilitez et ne compliquez pas, annoncez la bonne nouvelle et ne repoussez pas les gens.", source:"Rapporté par Al-Bukhari"},
+  {type:"aya", arabic:"وَذَكِّرْ فَإِنَّ الذِّكْرَى تَنفَعُ الْمُؤْمِنِينَ", text:"Rappelle, car le rappel profite aux croyants.", source:"Sourate Adh-Dhariyat, 51:55"},
+  {type:"hadith", arabic:HADITH_PREFIX+"لَيْسَ الشَّدِيدُ بِالصُّرَعَةِ إِنَّمَا الشَّدِيدُ الَّذِي يَمْلِكُ نَفْسَهُ عِنْدَ الْغَضَبِ", text:"Le fort n'est pas celui qui terrasse les autres, mais celui qui se maîtrise en cas de colère.", source:"Rapporté par Al-Bukhari et Muslim"},
+  {type:"aya", arabic:"لَا تَقْنَطُوا مِن رَّحْمَةِ اللَّهِ", text:"Ne perdez pas espoir de la miséricorde d'Allah.", source:"Sourate Az-Zumar, 39:53"},
+  {type:"hadith", arabic:HADITH_PREFIX+"لَا يُؤْمِنُ أَحَدُكُمْ حَتَّى يُحِبَّ لِأَخِيهِ مَا يُحِبُّ لِنَفْسِهِ", text:"Aucun de vous n'est vraiment croyant tant qu'il n'aime pas pour son frère ce qu'il aime pour lui-même.", source:"Rapporté par Al-Bukhari et Muslim"},
+  {type:"aya", arabic:"إِنَّ الصَّلَاةَ تَنْهَىٰ عَنِ الْفَحْشَاءِ وَالْمُنكَرِ", text:"La prière préserve de la turpitude et du blâmable.", source:"Sourate Al-Ankabut, 29:45"},
+  {type:"hadith", arabic:HADITH_PREFIX+"الْكَلِمَةُ الطَّيِّبَةُ صَدَقَةٌ", text:"La bonne parole est une aumône.", source:"Rapporté par Al-Bukhari et Muslim"},
+  {type:"aya", arabic:"وَمَا كَانَ رَبُّكَ نَسِيًّا", text:"Et ton Seigneur n'oublie jamais rien.", source:"Sourate Maryam, 19:64"},
+  {type:"hadith", arabic:HADITH_PREFIX+"إِنَّ اللَّهَ رَفِيقٌ يُحِبُّ الرِّفْقَ فِي الْأَمْرِ كُلِّهِ", text:"Allah est doux et aime la douceur en toute chose.", source:"Rapporté par Muslim"},
+];
+
 const CULTURE_TOPICS = {
   economie: { label:"Économie", rank:"01", day:"Lun · Mer",
     tasks:[
@@ -570,7 +604,7 @@ function emptyDay(d = new Date()){
     cultureDone:{},
     lecturePages:0,
     lectureDone:{},
-    wird:{fajr:false, dhuhr:false, asr:false, maghrib:false, isha:false, coranDone:false, coranValue:0},
+    wird:{fajr:false, dhuhr:false, asr:false, maghrib:false, isha:false, coranDone:false, coranValue:0, dhikrMorning:0, dhikrEvening:0, fasting:false},
     freeTasks:[],
   };
 }
@@ -594,6 +628,10 @@ function loadConfig(){
     userWeight:"",
     userHeight:"",
     wirdTrackMode:"hizb",
+    prayerCalcMethod:"3",
+    prayerLat:null,
+    prayerLon:null,
+    prayerLocationLabel:"",
   };
 }
 function defaultGymType(weekday){
@@ -618,6 +656,10 @@ if(config.userWeight === undefined) config.userWeight = "";
 if(config.userHeight === undefined) config.userHeight = "";
 if(!config.wirdTrackMode) config.wirdTrackMode = "hizb";
 if(!config.weightUnit) config.weightUnit = "kg";
+if(!config.prayerCalcMethod) config.prayerCalcMethod = "3";
+if(config.prayerLat === undefined) config.prayerLat = null;
+if(config.prayerLon === undefined) config.prayerLon = null;
+if(config.prayerLocationLabel === undefined) config.prayerLocationLabel = "";
 config.gymTypes.forEach(t => { if(!t.exercises) t.exercises = []; });
 function ensureDayShape(day){
   if(!day.sport) day.sport = emptyDay().sport;
@@ -626,7 +668,10 @@ function ensureDayShape(day){
     delete day.sport.mobilityDone;
   }
   if(!day.sport.gymLog) day.sport.gymLog = {};
-  if(!day.wird) day.wird = {fajr:false, dhuhr:false, asr:false, maghrib:false, isha:false, coranDone:false, coranValue:0};
+  if(!day.wird) day.wird = {fajr:false, dhuhr:false, asr:false, maghrib:false, isha:false, coranDone:false, coranValue:0, dhikrMorning:0, dhikrEvening:0, fasting:false};
+  if(day.wird.dhikrMorning === undefined) day.wird.dhikrMorning = 0;
+  if(day.wird.dhikrEvening === undefined) day.wird.dhikrEvening = 0;
+  if(day.wird.fasting === undefined) day.wird.fasting = false;
   return day;
 }
 
@@ -716,6 +761,99 @@ function dayHasCategory(rec, cat){
 
 function countLifetimeDays(cat){
   return Object.values(history).filter(rec => dayHasCategory(rec, cat)).length;
+}
+
+function countLifetimeFasting(){
+  return Object.values(history).filter(rec => rec.wird && rec.wird.fasting).length;
+}
+
+/* ---------------- Gamification: streaks, score, badges, heatmap ---------------- */
+
+function currentStreak(cat){
+  const d = new Date();
+  if(!dayHasCategory(history[todayKey(d)], cat)) d.setDate(d.getDate()-1);
+  let streak = 0;
+  while(dayHasCategory(history[todayKey(d)], cat)){
+    streak++;
+    d.setDate(d.getDate()-1);
+  }
+  return streak;
+}
+
+function renderStreaks(){
+  [["streakSport","sport"],["streakCulture","culture"],["streakLecture","lecture"],["streakWird","wird"]].forEach(([id,cat]) => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = `🔥 ${currentStreak(cat)}j`;
+  });
+}
+
+function gradeForPct(pct){
+  if(pct >= 90) return "A";
+  if(pct >= 75) return "B";
+  if(pct >= 50) return "C";
+  if(pct >= 25) return "D";
+  return "F";
+}
+
+const BADGES = [
+  {id:"first_book", icon:"📚", label:"Premier livre terminé", check:() => config.books.some(b => b.finished)},
+  {id:"sport_50", icon:"🏋️", label:"50 séances de gym", target:50, progress:() => Object.values(history).filter(r => r.sport && r.sport.gymDone).length},
+  {id:"sport_100", icon:"💪", label:"100 séances de gym", target:100, progress:() => Object.values(history).filter(r => r.sport && r.sport.gymDone).length},
+  {id:"wird_30", icon:"🕌", label:"30 jours de prières complètes", target:30, progress:() => Object.values(history).filter(r => r.wird && PRAYERS.every(p => r.wird[p.id])).length},
+  {id:"culture_50", icon:"🧠", label:"50 jours de culture", target:50, progress:() => countLifetimeDays("culture")},
+  {id:"lecture_20", icon:"📖", label:"20 jours de lecture", target:20, progress:() => countLifetimeDays("lecture")},
+  {id:"streak_7", icon:"🔥", label:"7 jours de suite (une catégorie)", target:7, progress:() => Math.max(currentStreak("sport"), currentStreak("culture"), currentStreak("lecture"), currentStreak("wird"))},
+  {id:"fasting_10", icon:"🌙", label:"10 jours de jeûne", target:10, progress:() => countLifetimeFasting()},
+];
+
+function badgeStatus(b){
+  if(b.check) return {done: b.check(), current:null, target:null};
+  const current = Math.min(b.progress(), b.target);
+  return {done: current >= b.target, current, target: b.target};
+}
+
+function renderBadges(){
+  const wrap = document.getElementById("badgesGrid");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  BADGES.forEach(b => {
+    const s = badgeStatus(b);
+    const el = document.createElement("div");
+    el.className = "badge-card" + (s.done ? " unlocked" : "");
+    el.innerHTML = `
+      <div class="badge-icon">${b.icon}</div>
+      <div class="badge-label">${b.label}</div>
+      ${s.target !== null ? `<div class="badge-progress">${s.current}/${s.target}</div>` : `<div class="badge-progress">${s.done ? "Débloqué" : "À débloquer"}</div>`}
+    `;
+    wrap.appendChild(el);
+  });
+}
+
+function renderHeatmap(){
+  const wrap = document.getElementById("heatmapGrid");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  const totalDays = 371;
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - (totalDays - 1));
+  start.setDate(start.getDate() - start.getDay());
+  const cellCount = Math.ceil(((end - start) / 86400000 + 1) / 7) * 7;
+  for(let i=0;i<cellCount;i++){
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    const cell = document.createElement("div");
+    if(d > end){
+      cell.className = "heatmap-cell heatmap-empty";
+    }else{
+      const key = todayKey(d);
+      const rec = history[key];
+      const level = rec ? ["sport","culture","lecture","wird"].filter(c => dayHasCategory(rec, c)).length : 0;
+      cell.className = "heatmap-cell heatmap-lv"+level;
+      cell.title = `${key} : ${level}/4`;
+    }
+    wrap.appendChild(cell);
+  }
 }
 
 function last7Dates(){
@@ -948,6 +1086,9 @@ function renderWirdEverywhere(){
   const coranPageBody = document.getElementById("coranPageBody");
   if(coranPageBody) renderCoranItem(coranPageBody);
   renderWirdProgress();
+  renderDailyWisdom();
+  renderDhikrCounters();
+  renderFastingToggle();
   renderProgress();
   renderPills();
 }
@@ -961,6 +1102,217 @@ function renderWirdPage(){
     saveConfig(config);
     renderWirdEverywhere();
   };
+  renderPrayerTimesBlock();
+}
+
+/* ---------------- Sagesse du jour (Aya / Hadith) ---------------- */
+
+function dayOfYear(d){
+  const start = new Date(d.getFullYear(), 0, 0);
+  return Math.floor((d - start) / 86400000);
+}
+
+function todayWisdom(){
+  return DAILY_WISDOM[dayOfYear(new Date()) % DAILY_WISDOM.length];
+}
+
+function renderDailyWisdom(){
+  const w = todayWisdom();
+  const badge = w.type === "aya" ? "📖 Aya du jour" : "🕋 Hadith du jour";
+  [{ar:"wisdomHomeArabic", txt:"wisdomHomeText", src:"wisdomHomeSource", badge:"wisdomHomeBadge"},
+   {ar:"wisdomPageArabic", txt:"wisdomPageText", src:"wisdomPageSource", badge:"wisdomPageBadge"}].forEach(ids => {
+    const arEl = document.getElementById(ids.ar);
+    const txtEl = document.getElementById(ids.txt);
+    const srcEl = document.getElementById(ids.src);
+    const badgeEl = document.getElementById(ids.badge);
+    if(arEl) arEl.textContent = w.arabic || "";
+    if(txtEl) txtEl.textContent = `« ${w.text} »`;
+    if(srcEl) srcEl.textContent = w.source;
+    if(badgeEl) badgeEl.textContent = badge;
+  });
+}
+
+/* ---------------- Dhikr counters ---------------- */
+
+function renderDhikrCounters(){
+  const morningEl = document.getElementById("dhikrMorningCount");
+  const eveningEl = document.getElementById("dhikrEveningCount");
+  if(!morningEl || !eveningEl) return;
+  morningEl.textContent = today.wird.dhikrMorning || 0;
+  eveningEl.textContent = today.wird.dhikrEvening || 0;
+
+  document.getElementById("dhikrMorningPlus").onclick = () => {
+    today.wird.dhikrMorning = (today.wird.dhikrMorning || 0) + 1; persist(); renderDhikrCounters();
+  };
+  document.getElementById("dhikrMorningReset").onclick = () => {
+    today.wird.dhikrMorning = 0; persist(); renderDhikrCounters();
+  };
+  document.getElementById("dhikrEveningPlus").onclick = () => {
+    today.wird.dhikrEvening = (today.wird.dhikrEvening || 0) + 1; persist(); renderDhikrCounters();
+  };
+  document.getElementById("dhikrEveningReset").onclick = () => {
+    today.wird.dhikrEvening = 0; persist(); renderDhikrCounters();
+  };
+}
+
+/* ---------------- Suivi du jeûne ---------------- */
+
+function renderFastingToggle(){
+  const checkbox = document.getElementById("fastingCheckbox");
+  if(!checkbox) return;
+  checkbox.checked = !!today.wird.fasting;
+  checkbox.onchange = (e) => {
+    today.wird.fasting = e.target.checked; persist(); renderFastingToggle();
+    const pill = document.getElementById("pillFasting");
+    if(pill) pill.textContent = countLifetimeFasting();
+  };
+}
+
+/* ---------------- Horaires de prière ---------------- */
+
+function prayerDateStr(d){
+  const dd = String(d.getDate()).padStart(2,"0");
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  return `${dd}-${mm}-${d.getFullYear()}`;
+}
+
+function cleanPrayerTime(raw){
+  return (raw || "").split(" ")[0];
+}
+
+async function fetchPrayerTimesRaw(dateStr, lat, lon, method){
+  const url = `https://api.aladhan.com/v1/timings/${dateStr}?latitude=${lat}&longitude=${lon}&method=${method}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("Erreur réseau");
+  const data = await res.json();
+  const t = data.data.timings;
+  const out = {};
+  PRAYER_TIMES_KEYS.forEach(k => { out[k] = cleanPrayerTime(t[k]); });
+  return out;
+}
+
+async function getPrayerTimesForDate(dateStr, lat, lon, method){
+  const cacheKey = `zdash:prayerTimes:${dateStr}:${lat}:${lon}:${method}`;
+  try{
+    const cached = JSON.parse(localStorage.getItem(cacheKey));
+    if(cached) return cached;
+  }catch(e){}
+  const times = await fetchPrayerTimesRaw(dateStr, lat, lon, method);
+  try{ localStorage.setItem(cacheKey, JSON.stringify(times)); }catch(e){}
+  return times;
+}
+
+let prayerCountdownInterval = null;
+let prayerTimesTodayCache = null;
+
+function computeNextPrayer(times){
+  const now = new Date();
+  const todayStr = now.toDateString();
+  for(const key of PRAYER_TIMES_KEYS){
+    const [h,m] = times[key].split(":").map(Number);
+    const t = new Date(todayStr);
+    t.setHours(h, m, 0, 0);
+    if(t > now) return {name:key, at:t};
+  }
+  const [h,m] = times.Fajr.split(":").map(Number);
+  const t = new Date(todayStr);
+  t.setHours(h, m, 0, 0);
+  t.setDate(t.getDate()+1);
+  return {name:"Fajr", at:t};
+}
+
+function formatCountdown(ms){
+  const totalMin = Math.max(0, Math.round(ms/60000));
+  const h = Math.floor(totalMin/60);
+  const m = totalMin%60;
+  return h > 0 ? `${h}h${String(m).padStart(2,"0")}` : `${m} min`;
+}
+
+function updateNextPrayerCountdownText(){
+  if(!prayerTimesTodayCache) return;
+  const next = computeNextPrayer(prayerTimesTodayCache);
+  const label = `Prochaine prière : ${next.name} dans ${formatCountdown(next.at - new Date())}`;
+  ["nextPrayerLineHome","nextPrayerLinePage"].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = label;
+  });
+}
+
+function renderPrayerTimesGrid(){
+  const grid = document.getElementById("prayerTimesGrid");
+  if(!grid || !prayerTimesTodayCache) return;
+  grid.innerHTML = "";
+  PRAYER_TIMES_KEYS.forEach(key => {
+    const cell = document.createElement("div");
+    cell.className = "prayer-time-cell";
+    cell.innerHTML = `<div class="ptc-name">${key}</div><div class="ptc-time">${prayerTimesTodayCache[key]}</div>`;
+    grid.appendChild(cell);
+  });
+}
+
+function setPrayerStatus(msg){
+  const el = document.getElementById("prayerLocationStatus");
+  if(el) el.textContent = msg;
+}
+
+async function loadAndRenderPrayerTimes(){
+  if(config.prayerLat === null || config.prayerLon === null){
+    setPrayerStatus("Active ta position pour afficher les horaires de prière.");
+    return;
+  }
+  setPrayerStatus(config.prayerLocationLabel || "Position enregistrée");
+  try{
+    const dateStr = prayerDateStr(new Date());
+    prayerTimesTodayCache = await getPrayerTimesForDate(dateStr, config.prayerLat, config.prayerLon, config.prayerCalcMethod);
+    renderPrayerTimesGrid();
+    updateNextPrayerCountdownText();
+    if(prayerCountdownInterval) clearInterval(prayerCountdownInterval);
+    prayerCountdownInterval = setInterval(updateNextPrayerCountdownText, 30000);
+  }catch(e){
+    setPrayerStatus("Impossible de récupérer les horaires (vérifie ta connexion).");
+  }
+}
+
+function requestPrayerLocation(){
+  if(!navigator.geolocation){
+    setPrayerStatus("La géolocalisation n'est pas disponible sur cet appareil.");
+    return;
+  }
+  setPrayerStatus("Localisation en cours…");
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      config.prayerLat = Number(pos.coords.latitude.toFixed(3));
+      config.prayerLon = Number(pos.coords.longitude.toFixed(3));
+      config.prayerLocationLabel = `Position : ${config.prayerLat}, ${config.prayerLon}`;
+      saveConfig(config);
+      loadAndRenderPrayerTimes();
+    },
+    () => { setPrayerStatus("Position refusée — active la localisation dans les réglages du navigateur."); },
+    {timeout:10000}
+  );
+}
+
+function renderPrayerTimesBlock(){
+  const btn = document.getElementById("prayerLocationBtn");
+  if(btn) btn.onclick = requestPrayerLocation;
+  const methodSel = document.getElementById("prayerMethodSelect");
+  if(methodSel){
+    if(!methodSel.dataset.filled){
+      PRAYER_CALC_METHODS.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m.id; opt.textContent = m.label;
+        methodSel.appendChild(opt);
+      });
+      methodSel.dataset.filled = "1";
+    }
+    methodSel.value = config.prayerCalcMethod;
+    methodSel.onchange = () => {
+      config.prayerCalcMethod = methodSel.value;
+      saveConfig(config);
+      loadAndRenderPrayerTimes();
+    };
+  }
+  loadAndRenderPrayerTimes();
 }
 
 function buildCultureItem(task, kind){
@@ -1269,6 +1621,9 @@ function renderPills(){
   document.getElementById("pillCulture").textContent = countLifetimeDays("culture");
   document.getElementById("pillLecture").textContent = countLifetimeDays("lecture");
   document.getElementById("pillWird").textContent = countLifetimeDays("wird");
+  const pillFasting = document.getElementById("pillFasting");
+  if(pillFasting) pillFasting.textContent = countLifetimeFasting();
+  renderStreaks();
   renderStatsMini();
   renderCalendar();
 }
@@ -1281,6 +1636,8 @@ function renderProgress(){
   document.getElementById("progressPct").textContent = pct+"%";
   document.getElementById("progressBar").style.width = pct+"%";
   document.getElementById("progressSub").textContent = `${done} / ${total} tâches complétées`;
+  const gradeEl = document.getElementById("progressGrade");
+  if(gradeEl) gradeEl.textContent = gradeForPct(pct);
 }
 
 function renderWeeklyGoal(){
@@ -1710,7 +2067,7 @@ function renderLecturePage(){
     top.className = "book-card-top";
     top.innerHTML = `
       <div class="b-info">
-        <div class="b-title">${b.title}${isCurrent ? " · en cours" : ""}</div>
+        <div class="b-title">${b.title}${isCurrent ? " · en cours" : ""}${b.finished ? " · ✓ terminé" : ""}</div>
         <div class="b-author">${b.author || ""} ${b.totalPages ? "— "+b.totalPages+" pages" : ""}</div>
       </div>
     `;
@@ -1734,6 +2091,16 @@ function renderLecturePage(){
       renderLecturePage();
     });
     top.appendChild(editBtn);
+    const finishBtn = document.createElement("button");
+    finishBtn.textContent = b.finished ? "✓ Terminé" : "Marquer terminé";
+    finishBtn.addEventListener("click", () => {
+      b.finished = !b.finished;
+      b.finishedDate = b.finished ? todayKey() : null;
+      saveConfig(config);
+      renderLecturePage();
+      renderBadges();
+    });
+    top.appendChild(finishBtn);
     if(b.hasPdf){
       const readBtn = document.createElement("button");
       readBtn.textContent = "📖 Lire le PDF";
@@ -1889,6 +2256,18 @@ function renderStatsPage(){
   p.innerHTML = `<span class="caption">${totalDays} jour${totalDays>1?"s":""} suivi${totalDays>1?"s":""} au total</span>`;
   lifeBlock.appendChild(p);
   wrap.appendChild(lifeBlock);
+
+  const heatBlock = document.createElement("div");
+  heatBlock.className = "routine-block";
+  heatBlock.innerHTML = `<h3>Heatmap d'activité</h3><div class="heatmap-grid" id="heatmapGrid"></div>`;
+  wrap.appendChild(heatBlock);
+  renderHeatmap();
+
+  const badgeBlock = document.createElement("div");
+  badgeBlock.className = "routine-block";
+  badgeBlock.innerHTML = `<h3>Badges</h3><div class="badges-grid" id="badgesGrid"></div>`;
+  wrap.appendChild(badgeBlock);
+  renderBadges();
 }
 
 /* ---------------- Render: Notes page ---------------- */
@@ -1970,6 +2349,7 @@ function applyTheme(theme){
 
 renderToday();
 initTheme();
+loadAndRenderPrayerTimes();
 
 if("serviceWorker" in navigator){
   window.addEventListener("load", () => {

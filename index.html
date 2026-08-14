@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Mon Dashboard">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -57,22 +57,31 @@
           <p id="todayDate"></p>
         </div>
         <div class="progress-card">
-          <div class="label"><span>Progression du jour</span><span class="pct" id="progressPct">0%</span></div>
+          <div class="label"><span>Progression du jour</span><span class="pct-wrap"><span class="pct" id="progressPct">0%</span><span class="grade" id="progressGrade">F</span></span></div>
           <div class="bar"><div class="bar-fill" id="progressBar" style="width:0%"></div></div>
           <div class="sub" id="progressSub">0 / 0 tâches complétées</div>
         </div>
       </div>
 
       <div class="stat-pills" style="margin-bottom:16px;">
-        <div class="pill"><span class="emoji">🔥</span><div><div class="n" id="pillSport">0</div><div class="l">Sport jours</div></div></div>
-        <div class="pill"><span class="emoji">🧠</span><div><div class="n" id="pillCulture">0</div><div class="l">Culture jours</div></div></div>
-        <div class="pill"><span class="emoji">📖</span><div><div class="n" id="pillLecture">0</div><div class="l">Lecture jours</div></div></div>
-        <div class="pill"><span class="emoji">🕌</span><div><div class="n" id="pillWird">0</div><div class="l">Prières jours</div></div></div>
+        <div class="pill"><span class="emoji">🔥</span><div><div class="n" id="pillSport">0</div><div class="l">Sport jours</div><div class="streak" id="streakSport">🔥 0j</div></div></div>
+        <div class="pill"><span class="emoji">🧠</span><div><div class="n" id="pillCulture">0</div><div class="l">Culture jours</div><div class="streak" id="streakCulture">🔥 0j</div></div></div>
+        <div class="pill"><span class="emoji">📖</span><div><div class="n" id="pillLecture">0</div><div class="l">Lecture jours</div><div class="streak" id="streakLecture">🔥 0j</div></div></div>
+        <div class="pill"><span class="emoji">🕌</span><div><div class="n" id="pillWird">0</div><div class="l">Prières jours</div><div class="streak" id="streakWird">🔥 0j</div></div></div>
+        <div class="pill"><span class="emoji">🌙</span><div><div class="n" id="pillFasting">0</div><div class="l">Jeûne jours</div></div></div>
+      </div>
+
+      <div class="wisdom-banner">
+        <span class="wisdom-badge" id="wisdomHomeBadge"></span>
+        <p class="wisdom-arabic" id="wisdomHomeArabic" dir="rtl" lang="ar"></p>
+        <p class="wisdom-text" id="wisdomHomeText"></p>
+        <span class="wisdom-source" id="wisdomHomeSource"></span>
       </div>
 
       <div class="card" id="wirdCard" style="margin-bottom:16px;">
         <div class="card-head"><span class="emoji">🕌</span><h3>PRIÈRES</h3></div>
         <p class="card-sub"><span class="caption" id="wirdObjectiveCaption"></span></p>
+        <p class="next-prayer-line" id="nextPrayerLineHome"></p>
         <div class="prayer-row" id="prayerRow"></div>
         <div class="checklist" id="coranChecklist"></div>
         <div class="card-progress"><span id="wirdProgTxt">0/6</span><div class="bar"><div class="bar-fill" id="wirdProgBar" style="width:0%"></div></div></div>
@@ -235,9 +244,53 @@
     <section class="page" data-page="wird">
       <div class="page-title"><h2>🕌 Prières</h2></div>
 
+      <div class="wisdom-banner">
+        <span class="wisdom-badge" id="wisdomPageBadge"></span>
+        <p class="wisdom-arabic" id="wisdomPageArabic" dir="rtl" lang="ar"></p>
+        <p class="wisdom-text" id="wisdomPageText"></p>
+        <span class="wisdom-source" id="wisdomPageSource"></span>
+      </div>
+
+      <div class="routine-block">
+        <div class="routine-block-head">
+          <h3>Horaires de prière</h3>
+          <div class="unit-switch">
+            <select id="prayerMethodSelect"></select>
+          </div>
+        </div>
+        <div class="manage-row" style="margin-bottom:10px;">
+          <span class="manage-label" id="prayerLocationStatus">Active ta position pour afficher les horaires de prière.</span>
+          <button type="button" id="prayerLocationBtn">📍 Activer ma position</button>
+        </div>
+        <div class="prayer-times-grid" id="prayerTimesGrid"></div>
+        <p class="next-prayer-line" id="nextPrayerLinePage"></p>
+      </div>
+
       <div class="routine-block">
         <h3>Les 5 prières</h3>
         <div class="prayer-row" id="prayerPageBody"></div>
+      </div>
+
+      <div class="routine-block">
+        <h3>Dhikr</h3>
+        <div class="dhikr-grid">
+          <div class="dhikr-counter">
+            <div class="dhikr-label">Matin</div>
+            <div class="dhikr-count" id="dhikrMorningCount">0</div>
+            <div class="dhikr-btns">
+              <button type="button" id="dhikrMorningPlus">+1</button>
+              <button type="button" id="dhikrMorningReset">↺</button>
+            </div>
+          </div>
+          <div class="dhikr-counter">
+            <div class="dhikr-label">Soir</div>
+            <div class="dhikr-count" id="dhikrEveningCount">0</div>
+            <div class="dhikr-btns">
+              <button type="button" id="dhikrEveningPlus">+1</button>
+              <button type="button" id="dhikrEveningReset">↺</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="routine-block">
@@ -250,6 +303,14 @@
           </select>
         </div>
         <div class="checklist" id="coranPageBody"></div>
+      </div>
+
+      <div class="routine-block">
+        <h3>Jeûne</h3>
+        <label class="check-item" id="fastingRow">
+          <input type="checkbox" id="fastingCheckbox">
+          <span class="txt"><span class="t">Je jeûne aujourd'hui</span></span>
+        </label>
       </div>
     </section>
 
