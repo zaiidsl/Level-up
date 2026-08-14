@@ -1862,10 +1862,11 @@ function svgLineChart(container, points, unit){
     y: h - pad - ((p.value - min)/range) * (h - pad*2),
   }));
   const line = coords.map(c => `${c.x},${c.y}`).join(" ");
+  const showDots = points.length <= 60;
   container.innerHTML = `
     <svg viewBox="0 0 ${w} ${h}" class="weight-chart">
       <polyline class="weight-line" points="${line}"/>
-      ${coords.map((c,i) => `<circle class="weight-dot" cx="${c.x}" cy="${c.y}" r="2.5"><title>${points[i].label} : ${points[i].value}${unit||""}</title></circle>`).join("")}
+      ${showDots ? coords.map((c,i) => `<circle class="weight-dot" cx="${c.x}" cy="${c.y}" r="2.5"><title>${points[i].label} : ${points[i].value}${unit||""}</title></circle>`).join("") : ""}
     </svg>
     <div class="chart-range"><span>${min}${unit||""}</span><span>${max}${unit||""}</span></div>
   `;
@@ -2943,6 +2944,91 @@ document.getElementById("pdfFullscreenBtn").addEventListener("click", () => {
   if(frame.requestFullscreen) frame.requestFullscreen();
 });
 
+/* ---------------- Stats: évolution & analytics ---------------- */
+
+function dayCompletionPct(rec){
+  if(!rec) return 0;
+  const cats = ["sport","culture","lecture","wird"];
+  const doneCount = cats.filter(c => dayHasCategory(rec, c)).length;
+  return Math.round(doneCount/cats.length*100);
+}
+
+function periodCompletionSeries(days){
+  const arr = [];
+  for(let i=days-1;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const key = todayKey(d);
+    arr.push({label:key, value:dayCompletionPct(history[key])});
+  }
+  return arr;
+}
+
+let statsEvolutionPeriod = 28;
+
+function renderStatsEvolution(){
+  const wrap = document.getElementById("statsEvolutionChart");
+  if(!wrap) return;
+  svgLineChart(wrap, periodCompletionSeries(statsEvolutionPeriod), "%");
+  document.querySelectorAll("#statsEvolutionPeriod button").forEach(b => {
+    b.classList.toggle("active", parseInt(b.dataset.days) === statsEvolutionPeriod);
+  });
+}
+
+function renderCategoryCompletionBars(){
+  const wrap = document.getElementById("categoryCompletionBars");
+  if(!wrap) return;
+  const days = 30;
+  const cats = [["Sport","sport"],["Culture","culture"],["Lecture","lecture"],["Prières","wird"]];
+  wrap.innerHTML = "";
+  cats.forEach(([label,cat]) => {
+    let count = 0;
+    for(let i=0;i<days;i++){
+      const d = new Date(); d.setDate(d.getDate()-i);
+      if(dayHasCategory(history[todayKey(d)], cat)) count++;
+    }
+    const pct = Math.round(count/days*100);
+    const row = document.createElement("div");
+    row.className = "stat-row";
+    row.innerHTML = `<div class="stat-label"><span>${label}</span><span class="n">${pct}%</span></div><div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>`;
+    wrap.appendChild(row);
+  });
+}
+
+function renderIdealDay(){
+  const el = document.getElementById("idealDayScore");
+  if(!el) return;
+  const s = sportCounts(), c = cultureCounts(), l = lectureCounts(), w = wirdCounts();
+  const total = s.total + c.total + l.total + w.total;
+  const done = s.done + c.done + l.done + w.done;
+  el.textContent = `${total ? Math.round(done/total*10) : 0}/10`;
+}
+
+function renderMonthlyRecap(){
+  const wrap = document.getElementById("monthlyRecapPrint");
+  if(!wrap) return;
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const monthKeys = Object.keys(history).filter(k => {
+    const [ky,km] = k.split("-").map(Number);
+    return ky === y && km === m+1;
+  });
+  const cats = [["Sport","sport"],["Culture","culture"],["Lecture","lecture"],["Prières","wird"]];
+  const monthName = now.toLocaleDateString("fr-FR", {month:"long", year:"numeric"});
+  const rows = cats.map(([label,cat]) => {
+    const n = monthKeys.filter(k => dayHasCategory(history[k], cat)).length;
+    return `<tr><td>${label}</td><td>${n} / ${monthKeys.length} jours</td></tr>`;
+  }).join("");
+  const unlocked = BADGES.filter(b => badgeStatus(b).done).map(b => `<li>${b.icon} ${b.label}</li>`).join("");
+  wrap.innerHTML = `
+    <h1>Récapitulatif — ${monthName}</h1>
+    <p>${monthKeys.length} jour(s) suivis ce mois-ci.</p>
+    <table>${rows}</table>
+    <h2>Badges débloqués</h2>
+    <ul>${unlocked || "<li>Aucun badge débloqué pour l'instant.</li>"}</ul>
+  `;
+}
+
 /* ---------------- Render: Stats page ---------------- */
 
 function renderStatsPage(){
@@ -2989,6 +3075,54 @@ function renderStatsPage(){
   badgeBlock.innerHTML = `<h3>Badges</h3><div class="badges-grid" id="badgesGrid"></div>`;
   wrap.appendChild(badgeBlock);
   renderBadges();
+
+  const evoBlock = document.createElement("div");
+  evoBlock.className = "routine-block";
+  evoBlock.innerHTML = `
+    <div class="routine-block-head">
+      <h3>Graphique d'évolution</h3>
+      <div class="unit-switch" id="statsEvolutionPeriod">
+        <button type="button" data-days="28">4 sem.</button>
+        <button type="button" data-days="90">3 mois</button>
+        <button type="button" data-days="365">1 an</button>
+      </div>
+    </div>
+    <div id="statsEvolutionChart"></div>
+  `;
+  wrap.appendChild(evoBlock);
+  document.querySelectorAll("#statsEvolutionPeriod button[data-days]").forEach(btn => {
+    btn.onclick = () => { statsEvolutionPeriod = parseInt(btn.dataset.days); renderStatsEvolution(); };
+  });
+  renderStatsEvolution();
+
+  const catBlock = document.createElement("div");
+  catBlock.className = "routine-block";
+  catBlock.innerHTML = `<h3>Taux de complétion par catégorie (30 j.)</h3><div id="categoryCompletionBars"></div>`;
+  wrap.appendChild(catBlock);
+  renderCategoryCompletionBars();
+
+  const idealBlock = document.createElement("div");
+  idealBlock.className = "routine-block";
+  idealBlock.innerHTML = `
+    <h3>Journée type idéale</h3>
+    <p class="page-hint" style="margin:-4px 0 10px;">Si tu coches tout ton sport, ta culture, ta lecture et tes prières, ta journée est un 10/10.</p>
+    <div class="imc-row">
+      <div class="imc-value"><span id="idealDayScore">0/10</span></div>
+      <div class="imc-cat">Score du jour, sur la même base que la progression du jour</div>
+    </div>
+  `;
+  wrap.appendChild(idealBlock);
+  renderIdealDay();
+
+  const exportBlock = document.createElement("div");
+  exportBlock.className = "routine-block";
+  exportBlock.innerHTML = `
+    <h3>Export mensuel</h3>
+    <p class="page-hint" style="margin:-4px 0 10px;">Génère un récapitulatif du mois en cours, à enregistrer en PDF via la boîte d'impression.</p>
+    <button type="button" class="card-btn" id="exportPdfBtn">🖨️ Exporter en PDF (mois)</button>
+  `;
+  wrap.appendChild(exportBlock);
+  document.getElementById("exportPdfBtn").onclick = () => { renderMonthlyRecap(); window.print(); };
 }
 
 /* ---------------- Render: Notes page ---------------- */

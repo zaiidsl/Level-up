@@ -367,6 +367,23 @@ a{color:var(--gold);}
   border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:7px;
   padding:5px 8px; font-size:12.5px; cursor:pointer;
 }
+.unit-switch button{
+  border:1px solid var(--border); background:var(--bg); color:var(--text); border-radius:7px;
+  padding:5px 10px; font-size:11.5px; cursor:pointer;
+}
+.unit-switch button:hover{border-color:var(--gold); color:var(--gold);}
+.unit-switch button.active{background:rgba(232,168,96,0.15); border-color:var(--gold); color:var(--gold); font-weight:600;}
+
+#monthlyRecapPrint{display:none;}
+@media print{
+  body > *:not(#monthlyRecapPrint){display:none !important;}
+  #monthlyRecapPrint{display:block !important; color:#000; background:#fff; padding:20px;}
+  #monthlyRecapPrint h1{font-size:22px; margin-bottom:4px;}
+  #monthlyRecapPrint h2{font-size:16px; margin-top:20px;}
+  #monthlyRecapPrint table{border-collapse:collapse; width:100%; margin-top:10px;}
+  #monthlyRecapPrint td{border:1px solid #ccc; padding:6px 10px; font-size:13px;}
+  #monthlyRecapPrint ul{padding-left:20px;}
+}
 
 .gym-routine-card{margin-bottom:8px;}
 .gym-routine-card:last-of-type{margin-bottom:0;}
