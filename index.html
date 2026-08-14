@@ -134,6 +134,53 @@
         </div>
       </div>
 
+      <div class="grid2">
+        <div class="card" id="weatherBlock">
+          <div class="card-head"><span class="emoji">🌤️</span><h3>MÉTÉO LOCALE</h3></div>
+          <p class="card-sub"><span class="caption" id="weatherStatus"></span><button type="button" id="weatherLocationBtn">📍 Position</button></p>
+          <div class="weather-row">
+            <span class="weather-icon" id="weatherIcon"></span>
+            <div>
+              <div class="weather-temp" id="weatherTemp"></div>
+              <div class="weather-label" id="weatherLabel"></div>
+            </div>
+          </div>
+          <p class="weather-hint" id="weatherHint"></p>
+        </div>
+
+        <div class="card" id="pomodoroBlock">
+          <div class="card-head"><span class="emoji">🍅</span><h3>MODE FOCUS</h3></div>
+          <p class="card-sub"><span class="caption" id="pomodoroModeLabel">🎯 Focus (25 min)</span></p>
+          <div class="rest-timer">
+            <div class="rest-timer-display" id="pomodoroDisplay">0:00</div>
+            <div class="bar"><div class="bar-fill" id="pomodoroBar" style="width:0%"></div></div>
+            <div class="rest-timer-controls">
+              <button type="button" id="pomodoroStartBtn">▶ Démarrer</button>
+              <button type="button" id="pomodoroPauseBtn">⏸ Pause</button>
+              <button type="button" id="pomodoroResetBtn">↺ Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-block">
+        <h3>Journal quotidien rapide</h3>
+        <div class="journal-grid">
+          <div>
+            <label class="manage-label">Ce qui a bien marché aujourd'hui</label>
+            <textarea id="journalGood" rows="2"></textarea>
+          </div>
+          <div>
+            <label class="manage-label">Ce que j'ai appris</label>
+            <textarea id="journalLearned" rows="2"></textarea>
+          </div>
+          <div>
+            <label class="manage-label">Demain je veux…</label>
+            <textarea id="journalTomorrow" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+
       <div class="bottom-row">
         <div class="quick-add">
           <h3>Ajout rapide</h3>
@@ -142,7 +189,9 @@
             <button data-goto="sport">🏋️ Séance sport</button>
             <button id="qaNote">📝 Note</button>
             <button data-goto="lecture">📖 Lecture</button>
+            <button type="button" id="remindersToggleBtn">🔕 Activer les rappels</button>
           </div>
+          <p class="shortcuts-hint">Raccourcis : <kbd>N</kbd> notes · <kbd>S</kbd> sport · <kbd>C</kbd> culture · <kbd>L</kbd> lecture · <kbd>P</kbd> prières · <kbd>T</kbd> accueil</p>
         </div>
         <div class="weekly-goal" id="weeklyGoalBtn">
           <span class="emoji">🎯</span>

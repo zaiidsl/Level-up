@@ -638,6 +638,7 @@ function emptyDay(d = new Date()){
     lectureDone:{},
     wird:{fajr:false, dhuhr:false, asr:false, maghrib:false, isha:false, coranDone:false, coranValue:0, dhikrMorning:0, dhikrEvening:0, fasting:false},
     freeTasks:[],
+    journal:{good:"", learned:"", tomorrow:""},
   };
 }
 
@@ -670,6 +671,7 @@ function loadConfig(){
     progressPhotos:[],
     readingGoalYear:24,
     wishlist:[],
+    remindersEnabled:false,
   };
 }
 function defaultGymType(weekday){
@@ -710,6 +712,7 @@ function ensureDayShape(day){
   if(day.wird.dhikrMorning === undefined) day.wird.dhikrMorning = 0;
   if(day.wird.dhikrEvening === undefined) day.wird.dhikrEvening = 0;
   if(day.wird.fasting === undefined) day.wird.fasting = false;
+  if(!day.journal) day.journal = {good:"", learned:"", tomorrow:""};
   return day;
 }
 
@@ -725,6 +728,7 @@ if(!config.weightLog) config.weightLog = [];
 if(!config.progressPhotos) config.progressPhotos = [];
 if(!config.readingGoalYear) config.readingGoalYear = 24;
 if(!config.wishlist) config.wishlist = [];
+if(config.remindersEnabled === undefined) config.remindersEnabled = false;
 
 function persist(){
   history[viewKey] = today;
@@ -1718,6 +1722,167 @@ document.getElementById("qaNote").addEventListener("click", () => {
   }
 });
 
+/* ---------------- Dashboard: Pomodoro / Mode Focus ---------------- */
+
+let pomodoroRemaining = 0;
+let pomodoroTotal = 0;
+let pomodoroInterval = null;
+let pomodoroMode = "focus";
+
+function updatePomodoroDisplay(){
+  const el = document.getElementById("pomodoroDisplay");
+  if(!el) return;
+  const m = Math.floor(Math.max(0,pomodoroRemaining)/60);
+  const s = Math.max(0,pomodoroRemaining)%60;
+  el.textContent = `${m}:${String(s).padStart(2,"0")}`;
+  const bar = document.getElementById("pomodoroBar");
+  if(bar) bar.style.width = pomodoroTotal ? Math.round((1-pomodoroRemaining/pomodoroTotal)*100)+"%" : "0%";
+  const label = document.getElementById("pomodoroModeLabel");
+  if(label) label.textContent = pomodoroMode === "focus" ? "🎯 Focus (25 min)" : "☕ Pause (5 min)";
+}
+function startPomodoro(mode){
+  clearInterval(pomodoroInterval);
+  pomodoroMode = mode;
+  const seconds = mode === "focus" ? 1500 : 300;
+  pomodoroRemaining = seconds;
+  pomodoroTotal = seconds;
+  updatePomodoroDisplay();
+  pomodoroInterval = setInterval(() => {
+    pomodoroRemaining--;
+    updatePomodoroDisplay();
+    if(pomodoroRemaining <= 0){
+      clearInterval(pomodoroInterval);
+      restBeep();
+      startPomodoro(pomodoroMode === "focus" ? "break" : "focus");
+    }
+  }, 1000);
+}
+function pausePomodoro(){ clearInterval(pomodoroInterval); }
+function resetPomodoro(){
+  clearInterval(pomodoroInterval);
+  pomodoroMode = "focus";
+  pomodoroRemaining = 0; pomodoroTotal = 0;
+  updatePomodoroDisplay();
+}
+document.getElementById("pomodoroStartBtn").addEventListener("click", () => startPomodoro("focus"));
+document.getElementById("pomodoroPauseBtn").addEventListener("click", pausePomodoro);
+document.getElementById("pomodoroResetBtn").addEventListener("click", resetPomodoro);
+
+/* ---------------- Dashboard: météo locale ---------------- */
+
+const WEATHER_CODE_INFO = {
+  0:{icon:"☀️", label:"Ciel dégagé"}, 1:{icon:"🌤️", label:"Plutôt dégagé"}, 2:{icon:"⛅", label:"Partiellement nuageux"},
+  3:{icon:"☁️", label:"Couvert"}, 45:{icon:"🌫️", label:"Brouillard"}, 48:{icon:"🌫️", label:"Brouillard givrant"},
+  51:{icon:"🌦️", label:"Bruine légère"}, 53:{icon:"🌦️", label:"Bruine"}, 55:{icon:"🌧️", label:"Bruine forte"},
+  61:{icon:"🌧️", label:"Pluie légère"}, 63:{icon:"🌧️", label:"Pluie"}, 65:{icon:"🌧️", label:"Pluie forte"},
+  71:{icon:"🌨️", label:"Neige légère"}, 73:{icon:"🌨️", label:"Neige"}, 75:{icon:"❄️", label:"Neige forte"},
+  80:{icon:"🌦️", label:"Averses"}, 81:{icon:"🌧️", label:"Averses fortes"}, 82:{icon:"⛈️", label:"Averses violentes"},
+  95:{icon:"⛈️", label:"Orage"}, 96:{icon:"⛈️", label:"Orage avec grêle"}, 99:{icon:"⛈️", label:"Orage violent"},
+};
+
+function setWeatherStatus(msg){
+  const el = document.getElementById("weatherStatus");
+  if(el) el.textContent = msg;
+}
+
+async function loadAndRenderWeather(){
+  const wrap = document.getElementById("weatherBlock");
+  if(!wrap) return;
+  if(config.prayerLat === null || config.prayerLon === null){
+    setWeatherStatus("Active ta position pour voir la météo locale.");
+    return;
+  }
+  setWeatherStatus("Chargement…");
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${config.prayerLat}&longitude=${config.prayerLon}&current=temperature_2m,weather_code&timezone=auto`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("network");
+    const data = await res.json();
+    const temp = Math.round(data.current.temperature_2m);
+    const code = data.current.weather_code;
+    const info = WEATHER_CODE_INFO[code] || {icon:"🌡️", label:"—"};
+    const goodForOutside = code <= 3 && temp >= 8 && temp <= 32;
+    document.getElementById("weatherIcon").textContent = info.icon;
+    document.getElementById("weatherTemp").textContent = `${temp}°C`;
+    document.getElementById("weatherLabel").textContent = info.label;
+    document.getElementById("weatherHint").textContent = goodForOutside
+      ? "🏃 Bon pour courir dehors"
+      : "🏠 Plutôt une séance en intérieur";
+    setWeatherStatus("");
+  }catch(e){
+    setWeatherStatus("Impossible de charger la météo (vérifie ta connexion).");
+  }
+}
+document.getElementById("weatherLocationBtn").addEventListener("click", () => {
+  requestPrayerLocation();
+  setTimeout(loadAndRenderWeather, 1200);
+});
+
+/* ---------------- Dashboard: journal quotidien rapide ---------------- */
+
+function renderJournal(){
+  const good = document.getElementById("journalGood");
+  const learned = document.getElementById("journalLearned");
+  const tomorrow = document.getElementById("journalTomorrow");
+  if(!good) return;
+  good.value = today.journal.good || "";
+  learned.value = today.journal.learned || "";
+  tomorrow.value = today.journal.tomorrow || "";
+}
+function bindJournalField(id, key){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener("change", () => {
+    today.journal[key] = el.value;
+    persist();
+  });
+}
+bindJournalField("journalGood", "good");
+bindJournalField("journalLearned", "learned");
+bindJournalField("journalTomorrow", "tomorrow");
+
+/* ---------------- Dashboard: raccourcis clavier ---------------- */
+
+document.addEventListener("keydown", (e) => {
+  const tag = document.activeElement ? document.activeElement.tagName : "";
+  if(tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.metaKey || e.ctrlKey || e.altKey) return;
+  const map = {n:"notes", s:"sport", c:"culture", l:"lecture", p:"wird", t:"today"};
+  const page = map[e.key.toLowerCase()];
+  if(page){ goto(page); }
+});
+
+/* ---------------- Dashboard: rappels doux (notifications) ---------------- */
+
+function updateReminderBtnLabel(){
+  const btn = document.getElementById("remindersToggleBtn");
+  if(!btn) return;
+  btn.textContent = config.remindersEnabled ? "🔔 Rappels activés" : "🔕 Activer les rappels";
+}
+document.getElementById("remindersToggleBtn").addEventListener("click", async () => {
+  if(!("Notification" in window)){
+    alert("Les notifications ne sont pas supportées sur cet appareil.");
+    return;
+  }
+  if(Notification.permission === "granted"){
+    config.remindersEnabled = !config.remindersEnabled;
+  }else{
+    const perm = await Notification.requestPermission();
+    config.remindersEnabled = perm === "granted";
+  }
+  saveConfig(config);
+  updateReminderBtnLabel();
+});
+
+function checkSoftReminders(){
+  if(!config.remindersEnabled || Notification.permission !== "granted") return;
+  const hour = new Date().getHours();
+  if(hour < 18) return;
+  if(!today.wird.coranDone){
+    new Notification("Mon Dashboard", {body:"Il te reste la lecture du Coran aujourd'hui.", icon:"icons/icon-192.png"});
+  }
+}
+setInterval(checkSoftReminders, 30*60*1000);
+
 function renderToday(){
   renderGreeting();
   renderSportChecklist(document.getElementById("sportChecklist"));
@@ -1728,6 +1893,9 @@ function renderToday(){
   renderWeeklyGoal();
   renderProgress();
   renderPills();
+  renderJournal();
+  updateReminderBtnLabel();
+  loadAndRenderWeather();
 }
 
 /* ---------------- Sport: planification hebdo auto ---------------- */
