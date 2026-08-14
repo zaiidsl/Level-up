@@ -292,8 +292,60 @@
     <!-- ================= LECTURE ================= -->
     <section class="page" data-page="lecture">
       <div class="page-title"><h2>📖 Ma bibliothèque</h2><button class="add-btn" id="addBookBtn">+ Ajouter un livre</button></div>
+
+      <div class="routine-block" id="readingGoalBlock">
+        <div class="routine-block-head">
+          <h3>Objectif annuel</h3>
+          <div class="unit-switch">
+            <input type="number" id="readingGoalInput" min="1" style="width:60px;">
+            <span class="manage-label" style="flex:0 0 auto;">livres</span>
+          </div>
+        </div>
+        <div class="bar"><div class="bar-fill" id="readingGoalBar" style="width:0%"></div></div>
+        <p class="card-sub" style="margin-top:6px;"><span class="caption" id="readingGoalText"></span></p>
+      </div>
+
+      <div class="routine-block">
+        <h3>Temps de lecture</h3>
+        <div class="rest-timer">
+          <div class="rest-timer-display" id="readingTimerDisplay">0:00</div>
+          <div class="bar"><div class="bar-fill" id="readingTimerBar" style="width:0%"></div></div>
+          <div class="rest-timer-presets" id="readingTimerPresets">
+            <button type="button" data-sec="600">10 min</button>
+            <button type="button" data-sec="1200">20 min</button>
+            <button type="button" data-sec="1800">30 min</button>
+          </div>
+          <div class="rest-timer-controls">
+            <button type="button" id="readingTimerPause">⏸ Pause</button>
+            <button type="button" id="readingTimerReset">↺ Reset</button>
+          </div>
+        </div>
+      </div>
+
       <div id="booksList"></div>
       <input type="file" id="pdfFileInput" accept="application/pdf" style="display:none;">
+
+      <div class="routine-block">
+        <h3>Citations favorites</h3>
+        <div id="favoriteQuotesList"></div>
+      </div>
+
+      <div class="routine-block">
+        <h3>Liste d'envie</h3>
+        <div class="manage-row">
+          <input type="text" id="wishlistTitleInput" placeholder="Titre du livre">
+        </div>
+        <div class="manage-row">
+          <input type="text" id="wishlistAuthorInput" placeholder="Auteur (optionnel)">
+          <select id="wishlistPrioritySelect">
+            <option value="haute">Priorité haute</option>
+            <option value="moyenne" selected>Priorité moyenne</option>
+            <option value="basse">Priorité basse</option>
+          </select>
+          <button type="button" id="wishlistAddBtn">Ajouter</button>
+        </div>
+        <div id="wishlistList"></div>
+      </div>
     </section>
 
     <!-- ================= LECTEUR PDF ================= -->

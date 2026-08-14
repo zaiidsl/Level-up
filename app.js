@@ -668,6 +668,8 @@ function loadConfig(){
     flashcards:[],
     weightLog:[],
     progressPhotos:[],
+    readingGoalYear:24,
+    wishlist:[],
   };
 }
 function defaultGymType(weekday){
@@ -721,6 +723,8 @@ if(!config.cultureQuotes) config.cultureQuotes = [];
 if(!config.flashcards) config.flashcards = [];
 if(!config.weightLog) config.weightLog = [];
 if(!config.progressPhotos) config.progressPhotos = [];
+if(!config.readingGoalYear) config.readingGoalYear = 24;
+if(!config.wishlist) config.wishlist = [];
 
 function persist(){
   history[viewKey] = today;
@@ -1528,6 +1532,11 @@ function buildNoteItem(type, label){
   if(expanded){
     const body = document.createElement("div");
     body.className = "note-item-body";
+    const chapterInput = document.createElement("input");
+    chapterInput.type = "text";
+    chapterInput.placeholder = "Chapitre (optionnel)";
+    chapterInput.className = "note-chapter-input";
+    if(existingNote) chapterInput.value = existingNote.chapter || "";
     const textarea = document.createElement("textarea");
     textarea.rows = 2;
     textarea.placeholder = type==="idee" ? "Écris ton idée…" : "Écris la citation…";
@@ -1538,13 +1547,15 @@ function buildNoteItem(type, label){
     saveBtn.className = "note-save-btn";
     saveBtn.addEventListener("click", () => {
       const text = textarea.value.trim();
+      const chapter = chapterInput.value.trim();
       if(!text) return;
       if(!book){ alert("Ajoute d'abord un livre dans ta bibliothèque."); return; }
       if(!book.notes) book.notes = [];
       if(existingNote){
         existingNote.text = text;
+        existingNote.chapter = chapter;
       }else{
-        book.notes.unshift({id:"note_"+Date.now(), type, text, date:todayKey()});
+        book.notes.unshift({id:"note_"+Date.now(), type, text, chapter, date:todayKey()});
       }
       saveConfig(config);
       today.lectureDone[type] = true;
@@ -1554,7 +1565,7 @@ function buildNoteItem(type, label){
       renderProgress();
       renderPills();
     });
-    body.append(textarea, saveBtn);
+    body.append(chapterInput, textarea, saveBtn);
     wrap.appendChild(body);
   }
 
@@ -2562,9 +2573,194 @@ document.getElementById("cultureQuoteAddBtn").addEventListener("click", () => {
   renderCultureQuotes();
 });
 
+/* ---------------- Lecture: objectif annuel ---------------- */
+
+function renderReadingGoal(){
+  const wrap = document.getElementById("readingGoalBlock");
+  if(!wrap) return;
+  const year = new Date().getFullYear();
+  const finishedThisYear = config.books.filter(b => b.finished && b.finishedDate && b.finishedDate.startsWith(String(year))).length;
+  const goal = config.readingGoalYear || 1;
+  const pct = Math.min(100, Math.round(finishedThisYear/goal*100));
+  document.getElementById("readingGoalInput").value = config.readingGoalYear;
+  document.getElementById("readingGoalText").textContent = `${finishedThisYear} / ${goal} livres en ${year}`;
+  document.getElementById("readingGoalBar").style.width = pct+"%";
+}
+document.getElementById("readingGoalInput").addEventListener("change", (e) => {
+  config.readingGoalYear = Math.max(1, parseInt(e.target.value)||1);
+  saveConfig(config);
+  renderReadingGoal();
+});
+
+/* ---------------- Lecture: citations favorites ---------------- */
+
+function allFavoriteQuotes(){
+  const quotes = [];
+  config.books.forEach(b => {
+    (b.notes||[]).filter(n => n.type === "citation").forEach(n => {
+      quotes.push({...n, bookTitle:b.title, bookAuthor:b.author});
+    });
+  });
+  return quotes.sort((a,b) => b.date.localeCompare(a.date));
+}
+
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = text.split(" ");
+  let line = "";
+  const lines = [];
+  words.forEach(word => {
+    const test = line + word + " ";
+    if(ctx.measureText(test).width > maxWidth && line){
+      lines.push(line.trim());
+      line = word + " ";
+    }else{
+      line = test;
+    }
+  });
+  lines.push(line.trim());
+  const startY = y - (lines.length-1)*lineHeight/2;
+  lines.forEach((l,i) => ctx.fillText(l, x, startY + i*lineHeight));
+}
+
+function exportQuoteImage(q){
+  const w = 1000, h = 600;
+  const canvas = document.createElement("canvas");
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  const isDark = document.body.classList.contains("dark");
+  ctx.fillStyle = isDark ? "#1b1e26" : "#f6f2ea";
+  ctx.fillRect(0,0,w,h);
+  ctx.fillStyle = isDark ? "#eae8e2" : "#232733";
+  ctx.textAlign = "center";
+  ctx.font = "italic 40px Georgia, serif";
+  wrapCanvasText(ctx, `« ${q.text} »`, w/2, h/2 - 40, w-160, 52);
+  ctx.font = "600 22px Inter, sans-serif";
+  ctx.fillStyle = "#e8a860";
+  ctx.fillText(`${q.bookTitle}${q.bookAuthor ? " — "+q.bookAuthor : ""}`, w/2, h - 80);
+  const link = document.createElement("a");
+  link.download = `citation-${q.id}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
+function renderFavoriteQuotes(){
+  const wrap = document.getElementById("favoriteQuotesList");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  const quotes = allFavoriteQuotes();
+  if(!quotes.length){ wrap.innerHTML = `<p class="empty">Aucune citation favorite pour le moment (ajoute-en depuis un livre).</p>`; return; }
+  quotes.forEach(q => {
+    const el = document.createElement("div");
+    el.className = "quote-row";
+    el.innerHTML = `
+      <div class="quote-text">« ${q.text} »</div>
+      <div class="quote-meta">${q.bookTitle}${q.bookAuthor ? " — "+q.bookAuthor : ""} · ${q.date}</div>
+    `;
+    const exportBtn = document.createElement("button");
+    exportBtn.type = "button"; exportBtn.className = "quote-export"; exportBtn.textContent = "🖼️ Exporter";
+    exportBtn.addEventListener("click", () => exportQuoteImage(q));
+    el.appendChild(exportBtn);
+    wrap.appendChild(el);
+  });
+}
+
+/* ---------------- Lecture: temps de lecture ---------------- */
+
+let readingTimerRemaining = 0;
+let readingTimerTotal = 0;
+let readingTimerInterval = null;
+
+function updateReadingTimerDisplay(){
+  const el = document.getElementById("readingTimerDisplay");
+  if(!el) return;
+  const m = Math.floor(Math.max(0,readingTimerRemaining)/60);
+  const s = Math.max(0,readingTimerRemaining)%60;
+  el.textContent = `${m}:${String(s).padStart(2,"0")}`;
+  const bar = document.getElementById("readingTimerBar");
+  if(bar) bar.style.width = readingTimerTotal ? Math.round((1-readingTimerRemaining/readingTimerTotal)*100)+"%" : "0%";
+}
+function startReadingTimer(seconds){
+  clearInterval(readingTimerInterval);
+  readingTimerRemaining = seconds;
+  readingTimerTotal = seconds;
+  updateReadingTimerDisplay();
+  readingTimerInterval = setInterval(() => {
+    readingTimerRemaining--;
+    updateReadingTimerDisplay();
+    if(readingTimerRemaining <= 0){
+      clearInterval(readingTimerInterval);
+      restBeep();
+    }
+  }, 1000);
+}
+function pauseReadingTimer(){ clearInterval(readingTimerInterval); }
+function resetReadingTimer(){
+  clearInterval(readingTimerInterval);
+  readingTimerRemaining = 0; readingTimerTotal = 0;
+  updateReadingTimerDisplay();
+}
+document.querySelectorAll("#readingTimerPresets button[data-sec]").forEach(btn => {
+  btn.addEventListener("click", () => startReadingTimer(parseInt(btn.dataset.sec)));
+});
+document.getElementById("readingTimerPause").addEventListener("click", pauseReadingTimer);
+document.getElementById("readingTimerReset").addEventListener("click", resetReadingTimer);
+
+/* ---------------- Lecture: liste d'envie ---------------- */
+
+function renderWishlist(){
+  const wrap = document.getElementById("wishlistList");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  const order = {haute:0, moyenne:1, basse:2};
+  const sorted = config.wishlist.slice().sort((a,b) => order[a.priority]-order[b.priority]);
+  if(!sorted.length){ wrap.innerHTML = `<p class="empty">Ta liste d'envie est vide.</p>`; return; }
+  sorted.forEach(w => {
+    const el = document.createElement("div");
+    el.className = "wishlist-row";
+    el.innerHTML = `
+      <span class="wl-priority wl-${w.priority}">${w.priority}</span>
+      <span class="wl-title">${w.title}${w.author ? " — "+w.author : ""}</span>
+    `;
+    const startBtn = document.createElement("button");
+    startBtn.type = "button"; startBtn.textContent = "+ Ma bibliothèque";
+    startBtn.addEventListener("click", () => {
+      const id = "b_"+Date.now();
+      config.books.push({id, title:w.title, author:w.author||"", totalPages:0, notes:[]});
+      config.currentBookId = id;
+      config.wishlist = config.wishlist.filter(x => x.id !== w.id);
+      saveConfig(config);
+      renderWishlist();
+      renderLecturePage();
+    });
+    const del = document.createElement("button");
+    del.type = "button"; del.textContent = "✕"; del.title = "Retirer";
+    del.addEventListener("click", () => {
+      config.wishlist = config.wishlist.filter(x => x.id !== w.id);
+      saveConfig(config);
+      renderWishlist();
+    });
+    el.append(startBtn, del);
+    wrap.appendChild(el);
+  });
+}
+document.getElementById("wishlistAddBtn").addEventListener("click", () => {
+  const title = document.getElementById("wishlistTitleInput").value.trim();
+  if(!title) return;
+  const author = document.getElementById("wishlistAuthorInput").value.trim();
+  const priority = document.getElementById("wishlistPrioritySelect").value;
+  config.wishlist.push({id:"wl_"+Date.now(), title, author, priority});
+  saveConfig(config);
+  document.getElementById("wishlistTitleInput").value = "";
+  document.getElementById("wishlistAuthorInput").value = "";
+  renderWishlist();
+});
+
 /* ---------------- Render: Lecture page ---------------- */
 
 function renderLecturePage(){
+  renderReadingGoal();
+  renderFavoriteQuotes();
+  renderWishlist();
   const wrap = document.getElementById("booksList");
   wrap.innerHTML = "";
   if(!config.books.length){ wrap.innerHTML = `<p class="empty">Aucun livre pour le moment.</p>`; return; }
@@ -2666,23 +2862,35 @@ function renderLecturePage(){
         empty.textContent = "Aucune note pour ce livre pour le moment.";
         el.appendChild(empty);
       }else{
+        const chapters = {};
+        notes.forEach(n => {
+          const key = (n.chapter || "").trim() || "Général";
+          if(!chapters[key]) chapters[key] = [];
+          chapters[key].push(n);
+        });
         const list = document.createElement("div");
         list.className = "book-notes-list";
-        notes.forEach(n => {
-          const row = document.createElement("div");
-          row.className = "book-note";
-          row.innerHTML = `
-            <span class="bn-icon">${n.type === "citation" ? "❝" : "💡"}</span>
-            <span class="bn-body"><span class="bn-text"></span><span class="bn-date">${n.date}</span></span>
-            <button class="bn-del" title="Supprimer">✕</button>
-          `;
-          row.querySelector(".bn-text").textContent = n.text;
-          row.querySelector(".bn-del").addEventListener("click", () => {
-            b.notes = b.notes.filter(x => x.id !== n.id);
-            saveConfig(config);
-            renderLecturePage();
+        Object.keys(chapters).forEach(chapterName => {
+          const chapterHead = document.createElement("div");
+          chapterHead.className = "book-chapter-head";
+          chapterHead.textContent = chapterName;
+          list.appendChild(chapterHead);
+          chapters[chapterName].forEach(n => {
+            const row = document.createElement("div");
+            row.className = "book-note";
+            row.innerHTML = `
+              <span class="bn-icon">${n.type === "citation" ? "❝" : "💡"}</span>
+              <span class="bn-body"><span class="bn-text"></span><span class="bn-date">${n.date}</span></span>
+              <button class="bn-del" title="Supprimer">✕</button>
+            `;
+            row.querySelector(".bn-text").textContent = n.text;
+            row.querySelector(".bn-del").addEventListener("click", () => {
+              b.notes = b.notes.filter(x => x.id !== n.id);
+              saveConfig(config);
+              renderLecturePage();
+            });
+            list.appendChild(row);
           });
-          list.appendChild(row);
         });
         el.appendChild(list);
       }

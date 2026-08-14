@@ -581,6 +581,39 @@ a{color:var(--gold);}
 .photo-compare > div{flex:1; text-align:center;}
 .photo-compare img{width:100%; border-radius:10px; object-fit:cover; max-height:320px;}
 
+.note-chapter-input{
+  width:100%; border:1px solid var(--border); border-radius:8px; padding:8px 10px;
+  background:var(--card); color:var(--text); font-size:12.5px; margin-bottom:6px;
+}
+.book-chapter-head{
+  font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px;
+  color:var(--gold); margin:10px 0 4px;
+}
+.book-chapter-head:first-child{margin-top:2px;}
+
+.quote-export{
+  display:block; margin-top:8px; background:none; border:1px solid var(--border); border-radius:7px;
+  padding:5px 10px; font-size:11px; cursor:pointer; color:var(--text);
+}
+.quote-export:hover{border-color:var(--gold); color:var(--gold);}
+
+.wishlist-row{
+  display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border);
+}
+.wishlist-row:last-child{border-bottom:none;}
+.wishlist-row button{
+  background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:5px 10px;
+  font-size:11px; cursor:pointer; color:var(--text); flex-shrink:0;
+}
+.wishlist-row button:hover{border-color:var(--gold); color:var(--gold);}
+.wl-title{flex:1; font-size:13px;}
+.wl-priority{
+  font-size:9.5px; font-weight:700; text-transform:uppercase; padding:3px 7px; border-radius:6px; flex-shrink:0;
+}
+.wl-haute{background:rgba(220,90,90,0.15); color:#d5605a;}
+.wl-moyenne{background:rgba(232,168,96,0.15); color:var(--gold);}
+.wl-basse{background:rgba(120,130,145,0.15); color:var(--muted);}
+
 footer{margin-top:24px; text-align:center; font-size:11px; color:var(--muted); letter-spacing:0.5px;}
 
 /* ---------- Mobile ---------- */
