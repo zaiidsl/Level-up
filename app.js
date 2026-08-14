@@ -3125,16 +3125,184 @@ function renderStatsPage(){
   document.getElementById("exportPdfBtn").onclick = () => { renderMonthlyRecap(); window.print(); };
 }
 
+/* ---------------- Notes: tags, templates, liens, recherche ---------------- */
+
+function extractTags(text){
+  const matches = text.match(/#[\p{L}0-9_]+/gu) || [];
+  return [...new Set(matches.map(t => t.slice(1).toLowerCase()))];
+}
+
+const NOTE_TEMPLATES = [
+  {label:"Résumé d'article", text:"Résumé d'article — #article\n\nTitre : \nIdées clés :\n- \n- \n- \n"},
+  {label:"Réflexion de lecture", text:"Réflexion de lecture — #reflexion #livre\n\n"},
+  {label:"Idée de business", text:"Idée de business — #idee\n\nProblème :\nSolution :\nPourquoi maintenant :\n"},
+];
+
+function renderNoteTemplates(){
+  const wrap = document.getElementById("noteTemplates");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  NOTE_TEMPLATES.forEach(t => {
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "note-template-btn"; btn.textContent = t.label;
+    btn.addEventListener("click", () => {
+      document.getElementById("noteComposerText").value = t.text;
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function renderNoteLinkTargetOptions(){
+  const typeSel = document.getElementById("noteLinkType");
+  const targetSel = document.getElementById("noteLinkTarget");
+  if(!typeSel || !targetSel) return;
+  if(typeSel.value === "book"){
+    targetSel.style.display = "";
+    targetSel.innerHTML = config.books.map(b => `<option value="${b.id}">${b.title}</option>`).join("");
+  }else if(typeSel.value === "culture"){
+    targetSel.style.display = "";
+    targetSel.innerHTML = Object.keys(CULTURE_TOPICS).map(id => `<option value="${id}">${CULTURE_TOPICS[id].label}</option>`).join("");
+  }else{
+    targetSel.style.display = "none";
+    targetSel.innerHTML = "";
+  }
+}
+document.getElementById("noteLinkType").addEventListener("change", renderNoteLinkTargetOptions);
+
+document.getElementById("noteComposerSaveBtn").addEventListener("click", () => {
+  const textarea = document.getElementById("noteComposerText");
+  const text = textarea.value.trim();
+  if(!text) return;
+  const linkType = document.getElementById("noteLinkType").value;
+  const linkTarget = document.getElementById("noteLinkTarget").value;
+  config.notes.unshift({
+    id:"n_"+Date.now(), text, date:todayKey(),
+    linkType: linkType || null,
+    linkId: linkType ? linkTarget : null,
+  });
+  saveConfig(config);
+  textarea.value = "";
+  document.getElementById("noteLinkType").value = "";
+  renderNoteLinkTargetOptions();
+  renderNotesPage();
+});
+
+function noteLinkLabel(n){
+  if(n.linkType === "book"){
+    const b = config.books.find(x => x.id === n.linkId);
+    return b ? `📖 ${b.title}` : null;
+  }
+  if(n.linkType === "culture"){
+    const t = CULTURE_TOPICS[n.linkId];
+    return t ? `🌍 ${t.label}` : null;
+  }
+  return null;
+}
+
+let activeNoteTagFilter = null;
+
+function renderNoteTagFilter(){
+  const wrap = document.getElementById("noteTagFilter");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  const allTags = new Set();
+  config.notes.forEach(n => extractTags(n.text).forEach(t => allTags.add(t)));
+  if(!allTags.size) return;
+  const allBtn = document.createElement("button");
+  allBtn.type = "button"; allBtn.textContent = "Tous";
+  allBtn.className = "tag-pill" + (activeNoteTagFilter === null ? " active" : "");
+  allBtn.addEventListener("click", () => { activeNoteTagFilter = null; renderNotesPage(); });
+  wrap.appendChild(allBtn);
+  [...allTags].sort().forEach(tag => {
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.textContent = "#"+tag;
+    btn.className = "tag-pill" + (activeNoteTagFilter === tag ? " active" : "");
+    btn.addEventListener("click", () => { activeNoteTagFilter = tag; renderNotesPage(); });
+    wrap.appendChild(btn);
+  });
+}
+
+/* ---------------- Notes: recherche globale ---------------- */
+
+function searchEverything(query){
+  const q = query.trim().toLowerCase();
+  if(!q) return [];
+  const results = [];
+  config.notes.forEach(n => {
+    if(n.text.toLowerCase().includes(q)) results.push({type:"Note", label:n.text.slice(0,60), page:"notes"});
+  });
+  config.books.forEach(b => {
+    if(b.title.toLowerCase().includes(q) || (b.author||"").toLowerCase().includes(q)){
+      results.push({type:"Livre", label:b.title, page:"lecture"});
+    }
+    (b.notes||[]).forEach(n => {
+      if(n.text.toLowerCase().includes(q)) results.push({type:n.type==="citation"?"Citation":"Idée", label:`${n.text.slice(0,50)} (${b.title})`, page:"lecture"});
+    });
+  });
+  config.cultureQuotes.forEach(qt => {
+    if(qt.text.toLowerCase().includes(q)) results.push({type:"Citation culture", label:qt.text.slice(0,60), page:"culture"});
+  });
+  config.flashcards.forEach(c => {
+    if(c.front.toLowerCase().includes(q) || c.back.toLowerCase().includes(q)) results.push({type:"Flashcard", label:c.front, page:"culture"});
+  });
+  config.wishlist.forEach(w => {
+    if(w.title.toLowerCase().includes(q)) results.push({type:"Envie de lecture", label:w.title, page:"lecture"});
+  });
+  config.gymTypes.forEach(t => {
+    if(t.label.toLowerCase().includes(q)) results.push({type:"Routine gym", label:t.label, page:"sport"});
+    t.exercises.forEach(exId => {
+      const ex = EXERCISE_LIBRARY.find(e => e.id === exId);
+      if(ex && ex.name.toLowerCase().includes(q)) results.push({type:"Exercice", label:`${ex.name} (${t.label})`, page:"sport"});
+    });
+  });
+  return results.slice(0, 30);
+}
+
+function renderGlobalSearchResults(){
+  const input = document.getElementById("globalSearchInput");
+  const wrap = document.getElementById("globalSearchResults");
+  if(!input || !wrap) return;
+  const results = searchEverything(input.value);
+  wrap.innerHTML = "";
+  if(!input.value.trim()) return;
+  if(!results.length){ wrap.innerHTML = `<p class="empty">Aucun résultat.</p>`; return; }
+  results.forEach(r => {
+    const row = document.createElement("div");
+    row.className = "search-result-row";
+    row.innerHTML = `<span class="sr-type">${r.type}</span><span class="sr-label"></span>`;
+    row.querySelector(".sr-label").textContent = r.label;
+    row.addEventListener("click", () => goto(r.page));
+    wrap.appendChild(row);
+  });
+}
+document.getElementById("globalSearchInput").addEventListener("input", renderGlobalSearchResults);
+
 /* ---------------- Render: Notes page ---------------- */
 
 function renderNotesPage(){
+  renderNoteTemplates();
+  renderNoteLinkTargetOptions();
+  renderNoteTagFilter();
   const wrap = document.getElementById("notesList");
   wrap.innerHTML = "";
-  if(!config.notes.length){ wrap.innerHTML = `<p class="empty">Aucune note pour le moment.</p>`; return; }
-  config.notes.forEach(n => {
+  const filtered = activeNoteTagFilter
+    ? config.notes.filter(n => extractTags(n.text).includes(activeNoteTagFilter))
+    : config.notes;
+  if(!filtered.length){ wrap.innerHTML = `<p class="empty">Aucune note pour le moment.</p>`; return; }
+  filtered.forEach(n => {
     const el = document.createElement("div");
     el.className = "note-card";
-    el.innerHTML = `<div><span class="n-text"></span><span class="n-date">${n.date}</span></div><button title="Supprimer">✕</button>`;
+    const linkLabel = noteLinkLabel(n);
+    const tags = extractTags(n.text);
+    el.innerHTML = `
+      <div>
+        <span class="n-text"></span>
+        ${tags.length ? `<div class="n-tags">${tags.map(t=>`<span class="tag-pill static">#${t}</span>`).join("")}</div>` : ""}
+        ${linkLabel ? `<div class="n-link">${linkLabel}</div>` : ""}
+        <span class="n-date">${n.date}</span>
+      </div>
+      <button title="Supprimer">✕</button>
+    `;
     el.querySelector(".n-text").textContent = n.text;
     el.querySelector("button").addEventListener("click", () => {
       config.notes = config.notes.filter(x => x.id !== n.id);
@@ -3143,14 +3311,6 @@ function renderNotesPage(){
     wrap.appendChild(el);
   });
 }
-document.getElementById("addNoteBtn").addEventListener("click", () => {
-  const v = prompt("Nouvelle note :");
-  if(v && v.trim()){
-    config.notes.unshift({id:"n_"+Date.now(), text:v.trim(), date:todayKey()});
-    saveConfig(config);
-    renderNotesPage();
-  }
-});
 
 /* ---------------- Render: Infos personnelles ---------------- */
 

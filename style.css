@@ -496,6 +496,46 @@ a{color:var(--gold);}
 .note-card .n-date{font-size:10.5px; color:var(--muted); margin-top:4px; display:block;}
 .note-card button{background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px;}
 .note-card button:hover{color:var(--gold);}
+.n-tags{margin-top:6px; display:flex; gap:5px; flex-wrap:wrap;}
+.n-link{font-size:11px; color:var(--gold); margin-top:5px;}
+
+.note-templates{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+.note-template-btn{
+  background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:6px 12px;
+  font-size:11.5px; cursor:pointer; color:var(--text);
+}
+.note-template-btn:hover{border-color:var(--gold); color:var(--gold);}
+
+#noteComposerText{
+  width:100%; resize:vertical; border:1px solid var(--border); background:var(--card); color:var(--text);
+  border-radius:8px; padding:10px 12px; font-size:13px; font-family:inherit; margin-bottom:10px;
+}
+
+.tag-filter-row{display:flex; gap:6px; flex-wrap:wrap;}
+.tag-pill{
+  background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:4px 11px;
+  font-size:11px; cursor:pointer; color:var(--muted);
+}
+.tag-pill:hover{border-color:var(--gold); color:var(--gold);}
+.tag-pill.active{background:rgba(232,168,96,0.15); border-color:var(--gold); color:var(--gold); font-weight:600;}
+.tag-pill.static{cursor:default; padding:3px 9px;}
+.tag-pill.static:hover{border-color:var(--border); color:var(--muted);}
+
+#globalSearchInput{
+  width:100%; border:1px solid var(--border); background:var(--card); color:var(--text);
+  border-radius:8px; padding:10px 12px; font-size:13px; margin-bottom:8px;
+}
+.search-result-row{
+  display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);
+  cursor:pointer;
+}
+.search-result-row:last-child{border-bottom:none;}
+.search-result-row:hover .sr-label{color:var(--gold);}
+.sr-type{
+  font-size:9.5px; font-weight:700; text-transform:uppercase; color:var(--muted);
+  background:var(--bg); border-radius:6px; padding:3px 7px; flex-shrink:0;
+}
+.sr-label{font-size:13px; flex:1;}
 .empty{color:var(--muted); font-size:13px; padding:20px 0; text-align:center;}
 
 .history-row{

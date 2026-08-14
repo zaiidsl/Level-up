@@ -442,8 +442,36 @@
 
     <!-- ================= NOTES ================= -->
     <section class="page" data-page="notes">
-      <div class="page-title"><h2>📝 Notes</h2><button class="add-btn" id="addNoteBtn">+ Nouvelle note</button></div>
-      <div class="notes-list" id="notesList"></div>
+      <div class="page-title"><h2>📝 Notes</h2></div>
+
+      <div class="routine-block">
+        <h3>Recherche globale</h3>
+        <input type="text" id="globalSearchInput" placeholder="Chercher dans notes, livres, citations, flashcards, routines…">
+        <div id="globalSearchResults"></div>
+      </div>
+
+      <div class="routine-block">
+        <h3>Nouvelle note</h3>
+        <div class="note-templates" id="noteTemplates"></div>
+        <textarea id="noteComposerText" rows="3" placeholder="Écris ta note… (utilise #tags pour la retrouver facilement)"></textarea>
+        <div class="manage-row">
+          <select id="noteLinkType">
+            <option value="">Pas de lien</option>
+            <option value="book">Lier à un livre</option>
+            <option value="culture">Lier à un pilier culture</option>
+          </select>
+          <select id="noteLinkTarget" style="display:none;"></select>
+        </div>
+        <button type="button" class="add-btn" id="noteComposerSaveBtn">Enregistrer la note</button>
+      </div>
+
+      <div class="routine-block">
+        <div class="routine-block-head">
+          <h3>Mes notes</h3>
+          <div class="tag-filter-row" id="noteTagFilter"></div>
+        </div>
+        <div class="notes-list" id="notesList"></div>
+      </div>
     </section>
 
     <!-- ================= INFOS PERSONNELLES ================= -->
