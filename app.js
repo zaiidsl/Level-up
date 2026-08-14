@@ -8,13 +8,45 @@ const THEME_KEY = "zdash:theme";
 
 const PDF_DB_NAME = "zdash-pdfs";
 const PDF_STORE = "pdfs";
+const PHOTO_STORE = "progressPhotos";
 
 function openPdfDb(){
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(PDF_DB_NAME, 1);
-    req.onupgradeneeded = () => { req.result.createObjectStore(PDF_STORE); };
+    const req = indexedDB.open(PDF_DB_NAME, 2);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if(!db.objectStoreNames.contains(PDF_STORE)) db.createObjectStore(PDF_STORE);
+      if(!db.objectStoreNames.contains(PHOTO_STORE)) db.createObjectStore(PHOTO_STORE);
+    };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
+  });
+}
+async function savePhoto(id, file){
+  const db = await openPdfDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PHOTO_STORE, "readwrite");
+    tx.objectStore(PHOTO_STORE).put(file, id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function getPhoto(id){
+  const db = await openPdfDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PHOTO_STORE, "readonly");
+    const req = tx.objectStore(PHOTO_STORE).get(id);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function deletePhoto(id){
+  const db = await openPdfDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PHOTO_STORE, "readwrite");
+    tx.objectStore(PHOTO_STORE).delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
   });
 }
 async function savePdf(bookId, file){
@@ -634,6 +666,8 @@ function loadConfig(){
     prayerLocationLabel:"",
     cultureQuotes:[],
     flashcards:[],
+    weightLog:[],
+    progressPhotos:[],
   };
 }
 function defaultGymType(weekday){
@@ -685,6 +719,8 @@ config.books.forEach(b => { if(!b.notes) b.notes = []; });
 if(!config.cultureNotes) config.cultureNotes = [];
 if(!config.cultureQuotes) config.cultureQuotes = [];
 if(!config.flashcards) config.flashcards = [];
+if(!config.weightLog) config.weightLog = [];
+if(!config.progressPhotos) config.progressPhotos = [];
 
 function persist(){
   history[viewKey] = today;
@@ -1683,6 +1719,290 @@ function renderToday(){
   renderPills();
 }
 
+/* ---------------- Sport: planification hebdo auto ---------------- */
+
+const WEEKDAY_LABELS = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+
+function renderWeeklyPlan(){
+  const wrap = document.getElementById("weeklyPlanGrid");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  const todayWeekday = new Date().getDay();
+  for(let i=0;i<7;i++){
+    const gymId = GYM_BY_WEEKDAY[i];
+    const gymType = config.gymTypes.find(t => t.id === gymId);
+    const cell = document.createElement("div");
+    cell.className = "plan-cell" + (i === todayWeekday ? " plan-today" : "");
+    cell.innerHTML = `<div class="plan-day">${WEEKDAY_LABELS[i]}</div><div class="plan-type">${gymType ? gymType.label : "—"}</div>`;
+    wrap.appendChild(cell);
+  }
+}
+
+/* ---------------- Sport: timer de repos ---------------- */
+
+let restTimerRemaining = 0;
+let restTimerTotal = 0;
+let restTimerInterval = null;
+
+function restBeep(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  }catch(e){}
+  if(navigator.vibrate) navigator.vibrate([200,100,200]);
+}
+
+function updateRestTimerDisplay(){
+  const el = document.getElementById("restTimerDisplay");
+  if(!el) return;
+  const m = Math.floor(Math.max(0,restTimerRemaining)/60);
+  const s = Math.max(0,restTimerRemaining)%60;
+  el.textContent = `${m}:${String(s).padStart(2,"0")}`;
+  const bar = document.getElementById("restTimerBar");
+  if(bar) bar.style.width = restTimerTotal ? Math.round((1 - restTimerRemaining/restTimerTotal)*100)+"%" : "0%";
+}
+
+function startRestTimer(seconds){
+  clearInterval(restTimerInterval);
+  restTimerRemaining = seconds;
+  restTimerTotal = seconds;
+  updateRestTimerDisplay();
+  restTimerInterval = setInterval(() => {
+    restTimerRemaining--;
+    updateRestTimerDisplay();
+    if(restTimerRemaining <= 0){
+      clearInterval(restTimerInterval);
+      restBeep();
+    }
+  }, 1000);
+}
+function pauseRestTimer(){ clearInterval(restTimerInterval); }
+function resetRestTimer(){
+  clearInterval(restTimerInterval);
+  restTimerRemaining = 0; restTimerTotal = 0;
+  updateRestTimerDisplay();
+}
+document.querySelectorAll("#restTimerPresets button[data-sec]").forEach(btn => {
+  btn.addEventListener("click", () => startRestTimer(parseInt(btn.dataset.sec)));
+});
+document.getElementById("restTimerCustomBtn").addEventListener("click", () => {
+  const v = parseInt(document.getElementById("restTimerCustomInput").value);
+  if(v > 0) startRestTimer(v);
+});
+document.getElementById("restTimerPause").addEventListener("click", pauseRestTimer);
+document.getElementById("restTimerReset").addEventListener("click", resetRestTimer);
+
+/* ---------------- Sport: poids & IMC ---------------- */
+
+function logWeightIfChanged(){
+  if(!config.userWeight) return;
+  const key = todayKey();
+  const existing = config.weightLog.find(w => w.date === key);
+  if(existing) existing.weight = config.userWeight;
+  else config.weightLog.push({date:key, weight:config.userWeight});
+  config.weightLog.sort((a,b) => a.date.localeCompare(b.date));
+  saveConfig(config);
+}
+
+function imcCategory(imc){
+  if(imc < 18.5) return "Insuffisance pondérale";
+  if(imc < 25) return "Corpulence normale";
+  if(imc < 30) return "Surpoids";
+  return "Obésité";
+}
+
+function renderWeightImc(){
+  const wrap = document.getElementById("weightImcBlock");
+  if(!wrap) return;
+  const weight = parseFloat(config.userWeight);
+  const heightCm = parseFloat(config.userHeight);
+  const imcEl = document.getElementById("imcValue");
+  const imcCatEl = document.getElementById("imcCategory");
+  if(weight && heightCm){
+    const h = heightCm/100;
+    const imc = weight / (h*h);
+    imcEl.textContent = imc.toFixed(1);
+    imcCatEl.textContent = imcCategory(imc);
+  }else{
+    imcEl.textContent = "—";
+    imcCatEl.textContent = "Renseigne poids et taille dans Infos personnelles";
+  }
+  renderWeightChart();
+}
+
+function svgLineChart(container, points, unit){
+  if(points.length < 2){
+    container.innerHTML = `<p class="empty">Pas encore assez de données pour un graphique.</p>`;
+    return;
+  }
+  const w = 600, h = 140, pad = 24;
+  const values = points.map(p => p.value);
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = (max - min) || 1;
+  const stepX = (w - pad*2) / (points.length - 1);
+  const coords = points.map((p,i) => ({
+    x: pad + i*stepX,
+    y: h - pad - ((p.value - min)/range) * (h - pad*2),
+  }));
+  const line = coords.map(c => `${c.x},${c.y}`).join(" ");
+  container.innerHTML = `
+    <svg viewBox="0 0 ${w} ${h}" class="weight-chart">
+      <polyline class="weight-line" points="${line}"/>
+      ${coords.map((c,i) => `<circle class="weight-dot" cx="${c.x}" cy="${c.y}" r="2.5"><title>${points[i].label} : ${points[i].value}${unit||""}</title></circle>`).join("")}
+    </svg>
+    <div class="chart-range"><span>${min}${unit||""}</span><span>${max}${unit||""}</span></div>
+  `;
+}
+
+function renderWeightChart(){
+  const wrap = document.getElementById("weightChartSvg");
+  if(!wrap) return;
+  const log = config.weightLog.slice(-30);
+  svgLineChart(wrap, log.map(l => ({label:l.date, value:l.weight})), "kg");
+}
+
+/* ---------------- Sport: historique des charges ---------------- */
+
+function loggedExerciseIds(){
+  const ids = new Set();
+  Object.values(history).forEach(rec => {
+    if(!rec.sport || !rec.sport.gymLog) return;
+    Object.values(rec.sport.gymLog).forEach(routineLog => {
+      Object.keys(routineLog).forEach(exId => {
+        if(routineLog[exId] && routineLog[exId].length) ids.add(exId);
+      });
+    });
+  });
+  return [...ids];
+}
+
+function exerciseSessionHistory(exId){
+  const sessions = [];
+  Object.keys(history).sort().forEach(dateKey => {
+    const rec = history[dateKey];
+    if(!rec.sport || !rec.sport.gymLog) return;
+    let maxWeight = 0, found = false;
+    Object.values(rec.sport.gymLog).forEach(routineLog => {
+      const sets = routineLog[exId];
+      if(sets && sets.length){
+        found = true;
+        sets.forEach(s => { maxWeight = Math.max(maxWeight, s.weight || 0); });
+      }
+    });
+    if(found) sessions.push({date:dateKey, maxWeight});
+  });
+  return sessions;
+}
+
+let exerciseHistorySelectedId = null;
+
+function renderExerciseHistoryUI(){
+  const sel = document.getElementById("exerciseHistorySelect");
+  const wrap = document.getElementById("exerciseHistoryChart");
+  if(!sel || !wrap) return;
+  const ids = loggedExerciseIds();
+  if(!ids.length){
+    sel.innerHTML = "";
+    wrap.innerHTML = `<p class="empty">Ajoute des séries à un exercice pour voir sa progression ici.</p>`;
+    return;
+  }
+  if(!exerciseHistorySelectedId || !ids.includes(exerciseHistorySelectedId)) exerciseHistorySelectedId = ids[0];
+  sel.innerHTML = ids.map(id => {
+    const ex = EXERCISE_LIBRARY.find(e => e.id === id);
+    return `<option value="${id}" ${id===exerciseHistorySelectedId?"selected":""}>${ex ? ex.name : id}</option>`;
+  }).join("");
+  sel.onchange = () => { exerciseHistorySelectedId = sel.value; renderExerciseHistoryChart(); };
+  renderExerciseHistoryChart();
+}
+
+function renderExerciseHistoryChart(){
+  const wrap = document.getElementById("exerciseHistoryChart");
+  const sessions = exerciseSessionHistory(exerciseHistorySelectedId).slice(-20);
+  svgLineChart(wrap, sessions.map(s => ({label:s.date, value:s.maxWeight})), config.weightUnit);
+}
+
+/* ---------------- Sport: photos de progression ---------------- */
+
+let progressPhotoCompareSelection = [];
+
+async function renderProgressPhotos(){
+  const grid = document.getElementById("progressPhotosGrid");
+  if(!grid) return;
+  grid.innerHTML = "";
+  if(!config.progressPhotos.length){
+    grid.innerHTML = `<p class="empty">Aucune photo de progression pour le moment.</p>`;
+    renderPhotoCompare();
+    return;
+  }
+  for(const meta of config.progressPhotos.slice().reverse()){
+    const blob = await getPhoto(meta.id);
+    if(!blob) continue;
+    const url = URL.createObjectURL(blob);
+    const cell = document.createElement("div");
+    cell.className = "photo-cell" + (progressPhotoCompareSelection.includes(meta.id) ? " selected" : "");
+    cell.innerHTML = `<img src="${url}" alt=""><div class="photo-date">${meta.date}</div>`;
+    const del = document.createElement("button");
+    del.type = "button"; del.className = "photo-del"; del.title = "Supprimer"; del.textContent = "✕";
+    del.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await deletePhoto(meta.id);
+      config.progressPhotos = config.progressPhotos.filter(p => p.id !== meta.id);
+      progressPhotoCompareSelection = progressPhotoCompareSelection.filter(id => id !== meta.id);
+      saveConfig(config);
+      renderProgressPhotos();
+    });
+    cell.appendChild(del);
+    cell.querySelector("img").addEventListener("click", () => {
+      const idx = progressPhotoCompareSelection.indexOf(meta.id);
+      if(idx >= 0) progressPhotoCompareSelection.splice(idx,1);
+      else{
+        if(progressPhotoCompareSelection.length >= 2) progressPhotoCompareSelection.shift();
+        progressPhotoCompareSelection.push(meta.id);
+      }
+      renderProgressPhotos();
+    });
+    grid.appendChild(cell);
+  }
+  renderPhotoCompare();
+}
+
+async function renderPhotoCompare(){
+  const wrap = document.getElementById("photoCompareWrap");
+  if(!wrap) return;
+  if(progressPhotoCompareSelection.length !== 2){
+    wrap.innerHTML = "";
+    return;
+  }
+  const [id1, id2] = progressPhotoCompareSelection;
+  const [b1, b2] = await Promise.all([getPhoto(id1), getPhoto(id2)]);
+  const m1 = config.progressPhotos.find(p => p.id === id1);
+  const m2 = config.progressPhotos.find(p => p.id === id2);
+  if(!b1 || !b2 || !m1 || !m2) return;
+  wrap.innerHTML = `
+    <div class="photo-compare">
+      <div><img src="${URL.createObjectURL(b1)}"><div class="photo-date">${m1.date}</div></div>
+      <div><img src="${URL.createObjectURL(b2)}"><div class="photo-date">${m2.date}</div></div>
+    </div>
+  `;
+}
+
+document.getElementById("progressPhotoInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const id = "photo_"+Date.now();
+  await savePhoto(id, file);
+  config.progressPhotos.push({id, date:todayKey()});
+  saveConfig(config);
+  e.target.value = "";
+  renderProgressPhotos();
+});
+
 /* ---------------- Render: Sport page ---------------- */
 
 function homeToggleBtn(isOn, onClick){
@@ -1699,6 +2019,10 @@ function renderSportPage(){
   renderSportCatalog();
   renderExtrasManager();
   renderGymManager();
+  renderWeeklyPlan();
+  renderWeightImc();
+  renderExerciseHistoryUI();
+  renderProgressPhotos();
 }
 
 function renderSportCatalog(){
@@ -2506,10 +2830,13 @@ document.getElementById("profileAge").addEventListener("change", (e) => {
 document.getElementById("profileWeight").addEventListener("change", (e) => {
   config.userWeight = e.target.value ? Math.max(0, parseFloat(e.target.value)||0) : "";
   saveConfig(config);
+  logWeightIfChanged();
+  renderWeightImc();
 });
 document.getElementById("profileHeight").addEventListener("change", (e) => {
   config.userHeight = e.target.value ? Math.max(0, parseInt(e.target.value)||0) : "";
   saveConfig(config);
+  renderWeightImc();
 });
 
 /* ---------------- Theme ---------------- */

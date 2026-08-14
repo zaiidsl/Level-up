@@ -181,17 +181,57 @@
         <p class="page-hint" style="margin:-4px 0 10px;">Clique une routine pour lui ajouter des exercices (séries, reps, poids).</p>
         <div id="gymManager" class="manage-list"></div>
       </div>
-    </section>
 
-    <div class="exercise-picker-overlay" id="exercisePickerOverlay">
-      <div class="exercise-picker-modal">
-        <div class="exercise-picker-head">
-          <input type="text" id="exerciseSearchInput" placeholder="Chercher un exercice…">
-          <button id="exercisePickerClose" type="button">✕</button>
-        </div>
-        <div class="exercise-picker-list" id="exercisePickerList"></div>
+      <div class="routine-block">
+        <h3>Planification de la semaine</h3>
+        <div class="plan-grid" id="weeklyPlanGrid"></div>
       </div>
-    </div>
+
+      <div class="routine-block">
+        <h3>Timer de repos</h3>
+        <div class="rest-timer">
+          <div class="rest-timer-display" id="restTimerDisplay">0:00</div>
+          <div class="bar"><div class="bar-fill" id="restTimerBar" style="width:0%"></div></div>
+          <div class="rest-timer-presets" id="restTimerPresets">
+            <button type="button" data-sec="30">30s</button>
+            <button type="button" data-sec="60">60s</button>
+            <button type="button" data-sec="90">90s</button>
+            <input type="number" id="restTimerCustomInput" placeholder="sec.">
+            <button type="button" id="restTimerCustomBtn">Go</button>
+          </div>
+          <div class="rest-timer-controls">
+            <button type="button" id="restTimerPause">⏸ Pause</button>
+            <button type="button" id="restTimerReset">↺ Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-block" id="weightImcBlock">
+        <h3>Poids &amp; IMC</h3>
+        <div class="imc-row">
+          <div class="imc-value"><span id="imcValue">—</span><span class="imc-label">IMC</span></div>
+          <div class="imc-cat" id="imcCategory"></div>
+        </div>
+        <div id="weightChartSvg"></div>
+      </div>
+
+      <div class="routine-block">
+        <h3>Historique des charges</h3>
+        <select id="exerciseHistorySelect" style="margin-bottom:10px;"></select>
+        <div id="exerciseHistoryChart"></div>
+      </div>
+
+      <div class="routine-block">
+        <div class="routine-block-head">
+          <h3>Photos de progression</h3>
+          <label class="add-btn" for="progressPhotoInput" style="cursor:pointer;">+ Ajouter une photo</label>
+          <input type="file" id="progressPhotoInput" accept="image/*" capture="environment" style="display:none;">
+        </div>
+        <p class="page-hint" style="margin:-4px 0 10px;">Clique deux photos pour les comparer côte à côte.</p>
+        <div class="photos-grid" id="progressPhotosGrid"></div>
+        <div id="photoCompareWrap"></div>
+      </div>
+    </section>
 
     <div class="exercise-picker-overlay" id="exercisePickerOverlay">
       <div class="exercise-picker-modal">
